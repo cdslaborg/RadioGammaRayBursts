@@ -1,2 +1,2 @@
-# RadioLoudGammaRayBursts
-sources codes for the studies of the Radio loud and quiet GRBs
+# RadioGammaRayBursts
+sources codes for the stud of the Radio loud and quiet GRBs
