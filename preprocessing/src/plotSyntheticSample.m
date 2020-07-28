@@ -3,7 +3,8 @@
 format compact; format long;
 filePath = mfilename('fullpath');
 [scriptPath,fileName,fileExt] = fileparts(filePath); cd(scriptPath);
-addpath(genpath('../../../../../../lib/matlab/')) % lib codes
+%addpath(genpath('../../../../../../lib/matlab/')) % lib codes
+addpath(genpath('../../../../../libmatlab/')) % added by josh
 
 % read Swift time table
 datPath = '../data/';
@@ -54,8 +55,8 @@ fontSize = 13;
 myYellow = [1,1,0];
 myGrey = [0 0 0]; % dtermines the grey color strength, higher means whiter
 %myGrey = [0.6 0.6 0.6]; % dtermines the grey color strength, higher means whiter
-SynSam.Path.root = '../../../../20181213_BatseLgrbRedshift/git/SyntheticSample/';
-%SynSam.Path.root = '../../SyntheticSample/';
+%SynSam.Path.root = '../../../../20181213_BatseLgrbRedshift/git/SyntheticSample/';
+SynSam.Path.root = '../../../../../BatseLgrbRedshiftCatalog/git/___SyntheticSample___/'; %added by Josh
 SynSam.Path.output = [SynSam.Path.root,'winx64/intel/release/static/serial/bin/out/kfac',kfacType,'/'];
 SynSam.Path.input = [SynSam.Path.root,'in/'];
 
@@ -197,7 +198,7 @@ for iVarPair = [5,15,16] %1:nVarPair
             %cmap = colormap; cmap = flipud(cmap); colormap(cmap);
 
             %Mask = zeros( length(ZModel.(ZModel.ID{imodel}).Synthetic.data(:,1)) , 1 ); Mask(synBegin:synEnd) = 1;
-            Mask = ZModel.(ZModel.ID{imodel}).Synthetic.data(synBegin:synEnd,10)>-1;
+            Mask = ZModel.(ZModel.ID{imodel}).Synthetic.data(synBegin:synEnd,14)>-1; % Josh made this change 10 to 14, plots using SWift detection threshold
             %Mask = ZModel.(ZModel.ID{imodel}).Synthetic.data(synBegin:synEnd,end)>0.5;
             %Mask = log10 (     ZModel.(ZModel.ID{imodel}).Synthetic.data(:,11) ) ... Nbol
             %     - log10 ( 0.5*ZModel.(ZModel.ID{imodel}).Synthetic.data(:,8) ) > log10(3);
@@ -224,7 +225,7 @@ for iVarPair = [5,15,16] %1:nVarPair
                     ..., log10 ( ZModel.(ZModel.ID{imodel}).Synthetic.data(Mask,11) ) ... Nbol
                     ...- log10 ( 0.5*ZModel.(ZModel.ID{imodel}).Synthetic.data(Mask,8) ) ... duration
                     ..., ZModel.(ZModel.ID{imodel}).Synthetic.data(Mask,13) ...
-                    , ZModel.(ZModel.ID{imodel}).Synthetic.data(Mask,13) ...
+                    , ZModel.(ZModel.ID{imodel}).Synthetic.data(Mask,14) ... %josh changed 13 to 14
                     , '.' ..., 'filled' ...
                     )
             CBar = colorbar;
@@ -321,7 +322,7 @@ end
 
 % find the moving average of Durz vs. Eiso for the detectable sample
 if ~exist('Boot','var'), bootstrap, end   % get the standard deviations of the sample averages
-Mask = ZModel.(ZModel.ID{imodel}).Synthetic.data(:,13)>0.5; % detectable sample
+Mask = ZModel.(ZModel.ID{imodel}).Synthetic.data(:,14)>0.5; % detectable sample %%% josh changed 13 to 14
 Detectable.count = sum(Mask);
 Detectable.sampleSize = 5000;
 Detectable.LogEiso = log(ZModel.(ZModel.ID{imodel}).Synthetic.data(Mask,3));
