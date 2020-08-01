@@ -16,7 +16,7 @@ figExportRequested = 0;
 markerSize = 20;
 fontSize = 13;
 kfacType = 'OneThird';
-bivarFigExportRequested = 1;
+bivarFigExportRequested = 0;
 
 path.root = "..";
 path.out = fullfile(path.root,"out");
@@ -30,19 +30,47 @@ rlum = 10.^ChandraLog10EradLog10Eiso(:,1); % radio luminosity
 eiso = 10.^ChandraLog10EradLog10Eiso(:,2) * 1.e51;
 logEiso = log(eiso);
 logRlum = log(rlum);
+XRFPointIndex=4;
 
-figure("color","white"); hold on; box on;
+if figExportRequested
+    figure('Color','none');
+else
+    figure("color","white");
+end
+
+hold on; box on;
+
     plot( rlum ...
         , eiso ...
         , "." ...
         , "markerSize", 20 ...
-        , "color", "red" ...
+        , "color", "magenta" ...
         );
+    
+    plot( rlum(XRFPointIndex) ... %plot XRF point
+        , eiso(XRFPointIndex) ...
+        , "s" ...
+        , "markerSize", 10 ...
+        , "color", "green" ...
+        ,"MarkerFaceColor","green" ...
+        );
+    
     set(gca,'xscale','log','yscale','log');
     xlabel("Peak Radio Luminosity at 8.5 GHz [ ergs / s / Hz ]", "fontSize", fontSize);
     ylabel("Total Isotropic Gamma-Ray Emission [ ergs ]", "fontSize", fontSize);
-hold off;
+    
+if figExportRequested
+    fileName = [dataPath,'EradEiso','.png'];
+    export_fig (fileName,'-m4 -transparent');
+    hold off; close(gcf);
+else
+    hold off;
+end
+    
 
-corr(logRlum,logEiso,"type","spearman")
+sprintf('correlation with XRF: %d',corr(logRlum,logEiso,"type","spearman")) % correlation with XRF
+
+sprintf('correlation without XRF: %d',corr(logRlum([1:XRFPointIndex-1 XRFPointIndex+1:end]),...
+logEiso([1:XRFPointIndex-1 XRFPointIndex+1:end]),"type","spearman"))
 
 
