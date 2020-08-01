@@ -159,7 +159,10 @@ for icorType = 1:1%1:Boot.Cor.Type.count
                 for irtype = 1:Radio.Type.count
                     radioType = Radio.Type.Name{irtype};
                     LegendName{irtype} = ['Radio-',radioType];
-                    h = histogram( Boot.Var.(ivarName).(radioType).(iStatName) / log(10) ,'normalization','probability');
+                    
+                    
+                    
+                    h = histogram( Boot.Var.(ivarName).(radioType).(iStatName) / log(10) ,'normalization','probability');%'FaceAlpha',1);
                     %h.BinWidth = 0.02;
                     h.BinLimits = Boot.Var.(ivarName).Hist.(iStatName).Limits / log(10);
                     h.NumBins = 100;
@@ -173,11 +176,13 @@ for icorType = 1:1%1:Boot.Cor.Type.count
                 xlabel([Boot.Var.LogZone.Hist.(iStatName).xlabel, Boot.Var.Label{ivar},' )'], 'Interpreter', 'Tex', 'fontSize', fontSize);
                 ylabel('Normalized Bootstrapping Count', 'Interpreter', 'Tex', 'fontSize', fontSize);
                 %xlim([-0.82 0.82]);
-                legend  ( LegendName ...
-                        , 'location' , Boot.Var.(ivarName).Hist.(iStatName).legendLoc ...
-                        , 'fontSize' , fontSize ...
-                        , 'color' , 'none' ...
-                        )
+
+                    legend  ( LegendName ...
+                            , 'location' , Boot.Var.(ivarName).Hist.(iStatName).legendLoc ...
+                            , 'fontSize' , fontSize ...
+                            , 'color' , 'none' ...
+                            )
+
                 legend boxoff;
     
                 % Compute the odds of Radio-Bright correlations being higher than Radio-Dark correlations
