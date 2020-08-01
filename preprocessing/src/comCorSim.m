@@ -14,7 +14,7 @@ SynSam.Mask = log(ZModel.B10.Synthetic.data(:,3)) > 1.197344248356904e+02;
 SynSam.LogEiso = log( ZModel.B10.Synthetic.data( SynSam.Mask , 3 ) );
 SynSam.LogDurz = log( ZModel.B10.Synthetic.data( SynSam.Mask , 4 ) );
 SynSam.LogZone = log( ZModel.B10.Synthetic.data( SynSam.Mask , 9 ) + 1.0 );
-SynSam.DetProb = ZModel.B10.Synthetic.data( SynSam.Mask , 10 );
+SynSam.DetProb = ZModel.B10.Synthetic.data( SynSam.Mask , 14 ); %josh changed 10 to 14
 SynSam.size = length(SynSam.LogEiso);
 
 %figure; hold on; box on; plot( SynSam.LogEiso , SynSam.LogDurz , '.' ); set(gca,'color','none'); hold off;
@@ -98,6 +98,9 @@ for itriple = 1:length(Cor.Triple(1,:))
         plot( Nicole.Bright.Cor.Spearman.(Cor.Name{xid}).coef ...
             , Nicole.Bright.Cor.Spearman.(Cor.Name{yid}).coef ...
             , '.', 'markersize', 20, 'color', 'red' );
+        plots = flip(findall(gcf,'Type','Line'));
+        leg = legend(plots,{'Quiet','Loud'}, 'Location', 'northwest'); %added by josh
+        set(leg,'Box','off')
         xlabel(['Spearman''s \rho:  ',Cor.Label{xid}], 'Interpreter', 'tex', 'fontSize', fontSize);
         ylabel(['Spearman''s \rho:  ',Cor.Label{yid}], 'Interpreter', 'tex', 'fontSize', fontSize);
         cbar = colorbar;
@@ -123,13 +126,16 @@ if figExportRequested, figure('visible','off','Color','none'), else, figure, end
             , Cor.(corType).EisoDurz(1:skip:end) ...
             , 5*ones(length(Cor.(corType).EisoDurz(1:skip:end)),1) ...
             , (Cor.Sample.LogDurz.Avg(1:skip:end))/log(10) ...
-            , 'filled' );
+            , 'filled',  'displayname', '' );
 	plot( Nicole.Dark.LogEiso.avg/log(10) ...
         , Nicole.Dark.Cor.Spearman.EisoDurz.coef ...
-        , '.', 'markersize', 20, 'color', 'black' );
+        , '.', 'markersize', 20, 'color', 'black', 'displayname', 'Quiet');
     plot( Nicole.Bright.LogEiso.avg/log(10) ...
         , Nicole.Bright.Cor.Spearman.EisoDurz.coef ...
-        , '.', 'markersize', 20, 'color', 'red' );
+        , '.', 'markersize', 20, 'color', 'red', 'displayname', 'Loud' );
+    plots = flip(findall(gcf,'Type','Line'));
+    leg = legend(plots,{'Quiet','Loud'}, 'Location', 'northwest'); %added by josh
+    set(leg,'Box','off')
     xlabel(['Mean LogEiso:  E_{iso}'], 'Interpreter', 'tex', 'fontSize', fontSize);
     ylabel(['Spearman''s \rho:  E_{iso} - T_{90z}'], 'Interpreter', 'tex', 'fontSize', fontSize);
     cbar = colorbar;
@@ -157,10 +163,12 @@ if figExportRequested, figure('visible','off','Color','none'), else, figure, end
             , 'filled' );
 	plot( Nicole.Dark.LogEiso.avg/log(10) ...
         , Nicole.Dark.LogDurz.avg/log(10) ...
-        , '.', 'markersize', 20, 'color', 'black' );
+        , '.', 'markersize', 20, 'color', 'black', 'displayname', 'Quiet' );
     plot( Nicole.Bright.LogEiso.avg/log(10) ...
         , Nicole.Bright.LogDurz.avg/log(10) ...
-        , '.', 'markersize', 20, 'color', 'red' );
+        , '.', 'markersize', 20, 'color', 'red', 'displayname', 'Loud' );
+    leg = legend; %added by josh
+    set(leg,'Box','off')
     xlabel(['Mean LogEiso:  E_{iso}'], 'Interpreter', 'tex', 'fontSize', fontSize);
     ylabel(['Mean LogDurz:  T_{90z}'], 'Interpreter', 'tex', 'fontSize', fontSize);
     cbar = colorbar;
