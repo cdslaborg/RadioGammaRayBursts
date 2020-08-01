@@ -19,7 +19,7 @@ end
 Radio = readLloydRadioData(kfacType);
 
 % read the Parameter posterior sample:
-ParaPost.rootPath = '../../../20181213_BatseLgrbRedshift/git/cosmicRate/winx64/intel/release/static/serial/';
+ParaPost.rootPath = '../../../20181213_BatseLgrbRedshift/git/cosmicRate/___winx64___/intel/release/static/serial/';
 dum = [ParaPost.rootPath,'kfac',kfacType,zmodel,'/bin/out/',zmodel,'_image_1_sample.txt'];
 ParaPost.Sample = importdata(dum);
 ParaPost.Sample.path = dum;
@@ -68,5 +68,5 @@ for thisType = RadioType
 
 end
 
-%% plot the resulting
+% plot the resulting
 %figure; hold on;

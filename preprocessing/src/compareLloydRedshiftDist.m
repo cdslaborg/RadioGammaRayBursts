@@ -15,7 +15,8 @@ Radio = readLloydRadioData(kfacType);
 
 kstest.outPath = '../out/';
 kstest.datPath = '../data/';
-kstest.filename = 'Corksteststrap.mat';
+
+[kstest.h,kstest.p,kstest.ks2stat] = kstest2( Radio.Bright.Zone.Val, Radio.Dark.Zone.Val );
 
 return
 
