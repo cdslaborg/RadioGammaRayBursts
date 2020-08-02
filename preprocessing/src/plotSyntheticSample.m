@@ -56,7 +56,7 @@ myYellow = [1,1,0];
 myGrey = [0 0 0]; % dtermines the grey color strength, higher means whiter
 %myGrey = [0.6 0.6 0.6]; % dtermines the grey color strength, higher means whiter
 %SynSam.Path.root = '../../../../20181213_BatseLgrbRedshift/git/SyntheticSample/';
-SynSam.Path.root = '../../../../../BatseLgrbRedshiftCatalog/git/___SyntheticSample___/'; %added by Josh
+SynSam.Path.root = '../../../../../20181213_BatseLgrbRedshift/git/___SyntheticSample___/'; % added by Josh
 SynSam.Path.output = [SynSam.Path.root,'winx64/intel/release/static/serial/bin/out/kfac',kfacType,'/'];
 SynSam.Path.input = [SynSam.Path.root,'in/'];
 
