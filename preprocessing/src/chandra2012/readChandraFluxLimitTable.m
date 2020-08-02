@@ -1,8 +1,8 @@
 close all;
 clear all;
 format compact; format long;
-addpath(genpath('../../../../../../lib/matlab/')) % lib codes
-addpath(genpath('../../../../../')) % git codes
+addpath(genpath('../../../../../../libmatlab/')) % lib codes
+addpath(genpath('../../')) % git codes
 filePath = mfilename('fullpath');
 [scriptPath,fileName,fileExt] = fileparts(filePath); cd(scriptPath);
 
@@ -34,6 +34,7 @@ xlim([20,1e5]);
 return
 
 % detected events flux
+
 figure; hold on; box on;
 plot( Poonam.DaysSinceBurst(Poonam.Mask.Freq8.Detection.All) ...
     , Poonam.RadioFluxDensity(Poonam.Mask.Freq8.Detection.All) ...
