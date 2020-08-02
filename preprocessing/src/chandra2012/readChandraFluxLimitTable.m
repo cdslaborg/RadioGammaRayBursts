@@ -6,8 +6,8 @@ addpath(genpath('../../../')) % git codes
 filePath = mfilename('fullpath');
 [scriptPath,fileName,fileExt] = fileparts(filePath); cd(scriptPath);
 
-Path.input = '../../data/';
-Path.output = '../../out';
+Path.input = '../../data/chandra2012';
+Path.output = '../../out/chandra2012';
 Poonam = importdata([Path.input,'POONAM-MASTER-RADIO-TABLE.xlsx']);
 Poonam.DaysSinceBurst = Poonam.data(:,6);
 Poonam.RadioFreq = Poonam.data(:,7);
@@ -21,6 +21,7 @@ Poonam.Mask.Freq8.Detection.Day510 = Poonam.Mask.Freq8.Detection.All & (Poonam.D
 Poonam.Mask.Freq8.NonDetect.Day510 = Poonam.Mask.Freq8.NonDetect.All & (Poonam.DaysSinceBurst>=5 & Poonam.DaysSinceBurst<=10);
 
 % plot peak radio flux at 8.46 GHz
+
 Poonam.RadioFreqUniq(:).value = unique(Poonam.RadioFreq);   % unique values
 Poonam.RadioFreqUniq(:).count = countmember( Poonam.RadioFreqUniq(:).value , Poonam.RadioFreq ); % unique values counts in the sample
 
