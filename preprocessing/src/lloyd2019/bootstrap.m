@@ -5,7 +5,7 @@
 format compact; format long;
 filePath = mfilename('fullpath');
 [scriptPath,fileName,fileExt] = fileparts(filePath); cd(scriptPath);
-addpath(genpath('../../../../../../lib/matlab/')) % lib codes
+addpath(genpath('../../../../../lib/matlab/')) % lib codes
 
 bootstrapRequested = 0;
 varFigExportRequested = 0;
