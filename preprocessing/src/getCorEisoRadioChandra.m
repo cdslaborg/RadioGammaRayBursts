@@ -3,7 +3,7 @@ clear all;
 format compact; format long;
 filePath = mfilename('fullpath');
 [scriptPath,fileName,fileExt] = fileparts(filePath); cd(scriptPath);
-addpath(genpath('../../../../lib/matlab/')) % lib codes
+addpath(genpath('../../../../../../lib/matlab/')) % lib codes
 
 cd([scriptPath,'/../']);
 dataPath = [pwd(),'\data\'];
@@ -21,7 +21,7 @@ bivarFigExportRequested = 0;
 path.root = "..";
 path.out = fullfile(path.root,"out");
 if ~exist(path.out,'dir'), mkdir(path.out), end
-path.in = fullfile(path.root,"data");
+path.in = fullfile(path.root,"data\chandra2012");
 load(fullfile(path.in,"ChandraLog10EradLog10Eiso.mat")); % loads ChandraLog10EradLog10Eiso array
 
 % plot
