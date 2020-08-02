@@ -1,5 +1,5 @@
-% get the confidence intervals on the radio-loud and radio-quiet GRB
-% correlations: logEiso-logDurz, logZone-logEiso, logZone-logDurz
+% get the confidence intervals on the L19 radio-loud and radio-quiet GRB 
+% sample correlations: logEiso-logDurz, logZone-logEiso, logZone-logDurz
 %close all;
 %clear all;
 format compact; format long;
@@ -14,6 +14,7 @@ fontSize = 13;
 kfacType = 'OneThird';
 
 % import Radio data of Lloyd 2019
+
 Radio = readLloydRadioData(kfacType);
 
 Boot.outPath = '../out/';
@@ -21,12 +22,14 @@ Boot.datPath = '../data/';
 Boot.filename = 'CorBootstrap.mat';
 
 % perform bootstrapping
+
 Boot.count = 100000;
 %Boot.Cor.Type.Name = {'Pearson','Spearman','Kendall'};
 Boot.Cor.Type.Name = {'Spearman'};
 Boot.Cor.Type.count = length(Boot.Cor.Type.Name);
 
 % construct correlation names
+
 Boot.Var.Name = {'LogZone','LogEiso','LogDurz'};
 Boot.Var.count = length(Boot.Var.Name);
 
@@ -93,6 +96,7 @@ else
     %else
     %    warning('Variable ''Boot'' already exists in MATLAB environment. Skipping Boot load from Hard Drive...');
     %end
+
 end
 
 

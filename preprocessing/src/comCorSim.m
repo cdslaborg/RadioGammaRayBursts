@@ -1,5 +1,5 @@
-% read synthetic data
-plotSyntheticSample
+plotSyntheticSample % read synthetic data
+
 Nicole = readLloydRadioData;
 close all
 
@@ -10,6 +10,7 @@ corType = 'Spearman';
 %corType = 'Kendall';
 
 % generate random samples
+
 SynSam.Mask = log(ZModel.B10.Synthetic.data(:,3)) > 1.197344248356904e+02;
 SynSam.LogEiso = log( ZModel.B10.Synthetic.data( SynSam.Mask , 3 ) );
 SynSam.LogDurz = log( ZModel.B10.Synthetic.data( SynSam.Mask , 4 ) );

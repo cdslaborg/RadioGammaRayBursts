@@ -1,9 +1,9 @@
 function Radio = readLloydRadioData(kfacType)
-    % read L19 radio-bright and radio-quiet data from the corresponding in Excel files.
-    % input:
-    %   kfacType: a string with only one possible value: "OneThird"
-    % output:
-    %   Radio: a structure with two major components (Dark,Bright) that store the properties of L19 sample.
+% read L19 radio-bright and radio-quiet data from the corresponding in Excel files.
+% input:
+%   kfacType: a string with only two possible values: "OneThird", "none"
+% output:
+%   Radio: a structure with two major components (Dark,Bright) that store the properties of L19 sample.
 
     %close all;
     %clear all;
@@ -15,10 +15,12 @@ function Radio = readLloydRadioData(kfacType)
     if nargin<1
         warning('no kfacType was provided as input to readLloydRadioData(). Assuming kfacType=''OneThird''')
         kfac = 0.66;
-    elseif strcmp(kfacType,"OneThird")
+    elseif strcmpi(kfacType,"OneThird")
         kfac = 0.66;
+    elseif strcmpi(kfacType,"none")
+        kfac = 1;
     else
-        error('Only kfacType="OneThird" is supported as input to readLloydRadioData()')
+        error('Only kfacType="OneThird" and kfacType="none" are supported as input to readLloydRadioData()')
     end
 
 
@@ -36,7 +38,11 @@ function Radio = readLloydRadioData(kfacType)
     Radio.Dark = importdata([Radio.Path.input,'radioDark.xlsx']);
     Radio.Dark.Zone.Val = 1.0 + Radio.Dark.data(:,4);
     Radio.Dark.Eiso.Val = Radio.Dark.data(:,2) * 10.0^52;
-    Radio.Dark.Durz.Val = Radio.Dark.data(:,3) ./ Radio.Dark.Zone.Val.^kfac;
+    kcorrection = Radio.Dark.Zone.Val;
+    if kfac~=1
+        kcorrection = kcorrection .^ kfac;
+    end
+    Radio.Dark.Durz.Val = Radio.Dark.data(:,3) ./ kcorrection;
     Radio.Dark.count = length(Radio.Dark.Durz.Val);
     Radio.Dark.LogZone.Val = log( Radio.Dark.Zone.Val );
     Radio.Dark.LogEiso.Val = log( Radio.Dark.Eiso.Val );
@@ -46,7 +52,8 @@ function Radio = readLloydRadioData(kfacType)
     Radio.Bright = importdata([Radio.Path.input,'radioBright.xlsx']);
     Radio.Bright.Zone.Val = 1.0 + Radio.Bright.data(:,3);
     Radio.Bright.Eiso.Val = Radio.Bright.data(:,1) * 10.0^52;
-    Radio.Bright.Durz.Val = Radio.Bright.data(:,2) ./ Radio.Bright.Zone.Val.^kfac;
+    kcorrection = Radio.Bright.Zone.Val; if kfac~=1; kcorrection = kcorrection .^ kfac; end
+    Radio.Bright.Durz.Val = Radio.Bright.data(:,2) ./ kcorrection;
     Radio.Bright.count = length(Radio.Bright.Durz.Val);
     Radio.Bright.LogZone.Val = log( Radio.Bright.Zone.Val );
     Radio.Bright.LogEiso.Val = log( Radio.Bright.Eiso.Val );
@@ -92,15 +99,25 @@ function Radio = readLloydRadioData(kfacType)
     CorType = {'ZoneEiso','ZoneDurz','EisoDurz'};
     VarTypeScalar = {'logZone','logEiso','logDurz'};
     for irtype = 1:length(RadioType)
+
         rtype = RadioType{irtype};
+
         %compute correlations
+
         for icor = 1:length(CorType)
             cor = CorType{icor};
+            logxval = Radio.(rtype).(['Log',cor(1:4)]).Val;
+            logyval = Radio.(rtype).(['Log',cor(5:8)]).Val;
             [ Radio.(rtype).Cor.Spearman.(cor).coef ...
             , Radio.(rtype).Cor.Spearman.(cor).pval ...
-            ] = corr( log(Radio.(rtype).(['Log',cor(1:4)]).Val),log(Radio.(rtype).(['Log',cor(5:8)]).Val),'type','spearman');
+            ] = corr( logxval ... 
+                    , logyval ...
+                    , 'type', 'spearman' ...
+                    );
         end
+
         % compute statistics
+
         for ivar = 1:length(VarType)
             var = VarType{ivar};
             Radio.(rtype).(var).avg = mean(Radio.(rtype).(var).Val);
@@ -109,6 +126,7 @@ function Radio = readLloydRadioData(kfacType)
             Radio.(rtype).(['Log10',var(4:7)]).avg = mean(Radio.(rtype).(var).Val)/log(10);
             Radio.(rtype).(['Log10',var(4:7)]).std = std(Radio.(rtype).(var).Val)/log(10);
         end
+
     end
 
     %disp('All Eiso-Durz');

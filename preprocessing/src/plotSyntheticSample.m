@@ -7,9 +7,12 @@ filePath = mfilename('fullpath');
 addpath(genpath('../../../../../libmatlab/')) % added by josh
 
 % read Swift time table
+
 datPath = '../data/';
 Swift = importdata([datPath,'swiftTimeTable.xlsx']);
+
 % plot histogram of log10(T90/Tr45)
+
 figure; box on; hold on;
 histogram( log10( Swift.data.Sheet2(:,1) ./ Swift.data.Sheet2(:,3) ) );
 hold off;
@@ -27,10 +30,14 @@ outPath = '../out/';
 kfacType = 'OneThird';
 ChandraDataPlotRequested = 0;
 if ChandraDataPlotRequested
+
     % read Chandra Data
     readChandraData;
-%    close all;
+
+    % close all;
+
     % restructure data into Lloyd Radio struct to avoid code redundancy
+
     for irtype = 1:Radio.Type.count
         radioType = Radio.Type.Name{irtype};
         Radio.(radioType).Zone = exp( ChandraTableOne.(radioType).LogZone );
@@ -40,11 +47,14 @@ if ChandraDataPlotRequested
         Radio.MarkerSize.overlay = 12;
     end
     datasetName = 'Chandra';
+
 else
+
     % import Radio data of Lloyd 2019
     Radio = readLloydRadioData(kfacType);
     datasetName = 'Lloyd';
-%    close all;
+    % close all;
+
 end
 
 ZoneRequested = 1;
@@ -53,14 +63,15 @@ histFigExportRequested = 0;
 bivarFigExportRequested = 0;
 fontSize = 13;
 myYellow = [1,1,0];
-myGrey = [0 0 0]; % dtermines the grey color strength, higher means whiter
-%myGrey = [0.6 0.6 0.6]; % dtermines the grey color strength, higher means whiter
+myGrey = [0 0 0]; % determines the gray color strength, higher means whiter
+%myGrey = [0.6 0.6 0.6]; % determines the gray color strength, higher means whiter
 %SynSam.Path.root = '../../../../20181213_BatseLgrbRedshift/git/SyntheticSample/';
 SynSam.Path.root = '../../../../../20181213_BatseLgrbRedshift/git/___SyntheticSample___/'; % added by Josh
 SynSam.Path.output = [SynSam.Path.root,'winx64/intel/release/static/serial/bin/out/kfac',kfacType,'/'];
 SynSam.Path.input = [SynSam.Path.root,'in/'];
 
 % import BATSE data
+
 Dummy = importdata([SynSam.Path.input,'batse_1366_lgrb_pbol_epk_sbol(0.001,20000).txt']);
 Batse.LogData.Obs = [ Dummy.data(:,2) ... % logPbol
                     , Dummy.data(:,4) ... % logEpk
@@ -72,6 +83,7 @@ Batse.ngrb = length(Batse.Data.Obs(:,1));
 Batse.Trigger = Dummy.data(:,1);
 
 % import Amati relation data
+
 Ghirlanda08 = importdata([SynSam.Path.input,'AmatiRelationGhirlanda2008.txt']);
 
 % read synthetic data

@@ -2,17 +2,19 @@ close all;
 clear all;
 format compact; format long;
 filePath = mfilename('fullpath');
-[scriptPath,fileName,fileExt] = fileparts(filePath); cd(scriptPath);
-addpath(genpath('../../../../lib/matlab/')) % lib codes
+[scriptPath,fileName,fileExt] = fileparts(filePath); scriptPath = string(scriptPath); cd(scriptPath);
+addpath(genpath("../../../../../lib/matlab/")) % lib codes
 
-cd([scriptPath,'/../']);
-dataPath = [pwd(),'\data\'];
-cd(dataPath);
-filePath = [dataPath,'EradEiso.png'];
+gitPath = getFullPath( fullfile(scriptPath,"..","..") );
+addpath(genpath(gitPath)) % git codes
+
+dataPath = fullfile( gitPath, "data", "Chandra2012" );
+filePath = fullfile(dataPath, "EradEiso.png");
+
 %grabit();
 
 cd(scriptPath);
-outPath = '../out/';
+outPath = fullfile( gitPath, "out", "Chandra2012" );
 if ~exist(outPath,'dir'), mkdir(outPath), end
 figExportRequested = 0;
 markerSize = 20;
@@ -27,7 +29,7 @@ else
 end
 
 % plot Chandra (2012) data in Figure 20
-load([dataPath,'ChandraLog10EradLog10Eiso.mat']);
+load(fullfile(dataPath,"ChandraLog10EradLog10Eiso.mat"));
 Chandra.LradEiso.Cor.Pearson.val = corr(ChandraLog10EradLog10Eiso(:,1),ChandraLog10EradLog10Eiso(:,2),'type','pearson');
 Chandra.LradEiso.Cor.Kendall.val = corr(ChandraLog10EradLog10Eiso(:,1),ChandraLog10EradLog10Eiso(:,2),'type','kendall');
 Chandra.LradEiso.Cor.Spearman.val = corr(ChandraLog10EradLog10Eiso(:,1),ChandraLog10EradLog10Eiso(:,2),'type','Spearman');
@@ -52,7 +54,7 @@ if figExportRequested, close all, figure('visible','off','Color','none'), else, 
     set(gca, 'color', 'none', 'fontsize', fontSize);
 
 if figExportRequested
-    fileName = [outPath,'ChandraLog10EradLog10Eiso.png'];
+    fileName = fullfile(outPath,"ChandraLog10EradLog10Eiso.png");
     export_fig (fileName,'-m4 -transparent');
     hold off; close(gcf);
 else
@@ -61,7 +63,7 @@ end
 
 
 % Chandra Sbol-SoptR plot
-ChandraTableOneKnownEisoEoptZ = importdata([dataPath,'ChandraTableOneKnownEisoEoptZ_clean.xlsx']);
+ChandraTableOneKnownEisoEoptZ = importdata(fullfile(dataPath,"ChandraTableOneKnownEisoEoptZ_clean.xlsx"));
 Chandra.FradSgam.Cor.Pearson.val = corr(ChandraTableOneKnownEisoEoptZ.data(:,4),ChandraTableOneKnownEisoEoptZ.data(:,6),'type','pearson');
 Chandra.FradSgam.Cor.Kendall.val = corr(ChandraTableOneKnownEisoEoptZ.data(:,4),ChandraTableOneKnownEisoEoptZ.data(:,6),'type','kendall');
 Chandra.FradSgam.Cor.Spearman.val = corr(ChandraTableOneKnownEisoEoptZ.data(:,4),ChandraTableOneKnownEisoEoptZ.data(:,6),'type','Spearman');
@@ -86,7 +88,7 @@ if figExportRequested, close all, figure('visible','off','Color','none'), else, 
     set(gca, 'color', 'none', 'fontsize', fontSize);
 
 if figExportRequested
-    fileName = [outPath,'ChandraFoptSgam.png'];
+    fileName = fullfile(outPath,"ChandraFoptSgam.png");
     export_fig (fileName,'-m4 -transparent');
     hold off; close(gcf);
 else
@@ -95,8 +97,8 @@ end
 
 
 % match Chandra Radio data with Table1 data
-ChandraTableOne = importdata([dataPath,'ChandraTableOne_clean.xlsx']);
-ChandraRadioPeakFlux = importdata([dataPath,'ChandraRadioPeakFlux_clean.xlsx']);
+ChandraTableOne = importdata(fullfile(dataPath,"ChandraTableOne_clean.xlsx"));
+ChandraRadioPeakFlux = importdata(fullfile(dataPath,"ChandraRadioPeakFlux_clean.xlsx"));
 
 CommonTrig = mapTriggers(ChandraTableOne.textdata(2:end,1),ChandraRadioPeakFlux.textdata(2:end,1),ChandraRadioPeakFlux.data(:,1));
 DataX = ChandraRadioPeakFlux.data(CommonTrig.IndxRadio,2);
@@ -124,8 +126,8 @@ if figExportRequested, close all, figure('visible','off','Color','none'), else, 
     set(gca, 'color', 'none', 'fontsize', fontSize);
 
 if figExportRequested
-    fileName = [outPath,'ChandraFoptSgam.png'];
-    export_fig (fileName,'-m4 -transparent');
+    fileName = fullfile(outPath,"ChandraFoptSgam.png");
+    export_fig(fileName,'-m4 -transparent');
     hold off; close(gcf);
 else
     hold off;
@@ -197,7 +199,7 @@ for ivar = 1:Var.count-1
             legend boxoff;
         set(gca, 'color', 'none', 'fontsize', fontSize);
         if bivarFigExportRequested
-            fileName = [outPath,'Chandra',Var.Name{ivar},Var.Name{jvar},'.png'];
+            fileName = fullfile(outPath,"Chandra"+string(Var.Name{ivar})+string(Var.Name{jvar})+".png");
             export_fig (fileName,'-m4 -transparent');
             hold off; close(gcf);
         else
@@ -236,6 +238,7 @@ for i = Log10Eiso.count:-1:1
 end
 
 % plot correlation vs threshold
+
 for ivar = 1:Var.count-1
     varNameI = Var.Name{ivar};
     for jvar = ivar+1:Var.count
@@ -270,7 +273,7 @@ for ivar = 1:Var.count-1
             legend boxoff;
             set(gca, 'color', 'none', 'fontsize', fontSize);
         if bivarFigExportRequested
-            fileName = [outPath,'ChandraEisoCutoff',Var.Name{ivar},Var.Name{jvar},'.png'];
+            fileName = fullfile(outPath,"ChandraEisoCutoff"+string(Var.Name{ivar})+string(Var.Name{jvar})+".png");
             export_fig (fileName,'-m4 -transparent');
             hold off; close(gcf);
         else
