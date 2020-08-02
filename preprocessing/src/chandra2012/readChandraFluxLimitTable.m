@@ -1,13 +1,13 @@
 close all;
 clear all;
 format compact; format long;
-addpath(genpath('../../../../../lib/matlab/')) % lib codes
-addpath(genpath('../../../')) % git codes
+addpath(genpath('../../../../../../lib/matlab/')) % lib codes
+addpath(genpath('../../../../../')) % git codes
 filePath = mfilename('fullpath');
 [scriptPath,fileName,fileExt] = fileparts(filePath); cd(scriptPath);
 
-Path.input = '../../data/chandra2012';
-Path.output = '../../out/chandra2012';
+Path.input = '../../data/chandra2012/';
+Path.output = '../../out/chandra2012/';
 Poonam = importdata([Path.input,'POONAM-MASTER-RADIO-TABLE.xlsx']);
 Poonam.DaysSinceBurst = Poonam.data(:,6);
 Poonam.RadioFreq = Poonam.data(:,7);
