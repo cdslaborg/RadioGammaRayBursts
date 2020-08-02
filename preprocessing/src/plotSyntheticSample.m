@@ -1,10 +1,10 @@
-%close all;
-%clear all;
+close all;
+clear all;
 format compact; format long;
 filePath = mfilename('fullpath');
 [scriptPath,fileName,fileExt] = fileparts(filePath); cd(scriptPath);
-%addpath(genpath('../../../../../../lib/matlab/')) % lib codes
-addpath(genpath('../../../../../libmatlab/')) % added by josh
+
+addpath(genpath('../../../../libmatlab/')) % added by josh
 
 % read Swift time table
 
