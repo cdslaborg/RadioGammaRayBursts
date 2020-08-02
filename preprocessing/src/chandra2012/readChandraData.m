@@ -20,7 +20,7 @@ markerSize = 20;
 fontSize = 13;
 kfacType = 'OneThird';
 
-figExportRequested = 0;
+figExportRequested = 1;
 bivarFigExportRequested = 1;
 
 if strcmp(kfacType,'OneThird')
@@ -75,7 +75,7 @@ else
     hold off;
 end
 
-return
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Chandra Sbol-SoptR plot
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
