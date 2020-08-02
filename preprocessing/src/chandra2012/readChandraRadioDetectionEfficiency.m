@@ -1,11 +1,11 @@
-readPoonamFluxLimitTable % This gives the Poonam object
+readChandraFluxLimitTable % This gives the Poonam object
 
 close all;
 %clear all;
 format compact; format long;
 filePath = mfilename('fullpath');
 [scriptPath,fileName,fileExt] = fileparts(filePath); cd(scriptPath);
-addpath(genpath('../../../../lib/matlab/')) % lib codes
+addpath(genpath('../../../../../../lib/matlab/')) % lib codes
 
 transparencyRequested = 1;
 figExportRequested = 1;
@@ -19,8 +19,8 @@ else
 end
  
 
-dataPath = '../data/';
-outPath = '../out/';
+dataPath = '../../data/chandra2012/';
+outPath = '../../out/chandra2012/';
 load([dataPath,'ChandraRadioDetectionEfficiency.mat']);
 figure;
 plot( ChandraRadioDetectionEfficiency(:,1) ...

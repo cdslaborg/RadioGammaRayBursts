@@ -66,8 +66,10 @@ if figExportRequested
 else
     hold off;
 end
-    
-[bootstat,bootsam] = bootstrp(1000,@corr,logRlum,logEiso); %getting bootstrapped correlations to calculate standard deviation of Erad-Eiso correlation
+
+
+scorr = @(a,b)(corr(a,b,'type','Spearman'));    
+[bootstat,bootsam] = bootstrp(1000,scorr,logRlum,logEiso); %getting bootstrapped correlations to calculate standard deviation of Erad-Eiso correlation
 sprintf('correlation and std with XRF: %d',corr(logRlum,logEiso,"type","spearman")) % correlation with XRF
 sprintf('std with XRF: %d',std(bootstat))
 
@@ -75,4 +77,4 @@ sprintf('std with XRF: %d',std(bootstat))
 [bootstat2,bootsam2] = bootstrp(1000,@corr,logRlum([1:XRFPointIndex-1 XRFPointIndex+1:end]),logEiso([1:XRFPointIndex-1 XRFPointIndex+1:end]));
 sprintf('correlation without XRF: %d',corr(logRlum([1:XRFPointIndex-1 XRFPointIndex+1:end]),...
 logEiso([1:XRFPointIndex-1 XRFPointIndex+1:end]),"type","spearman"))
-sprintf('std with XRF: %d',std(bootstat2))
+sprintf('std without XRF: %d',std(bootstat2))
