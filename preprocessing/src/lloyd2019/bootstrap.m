@@ -5,7 +5,7 @@
 format compact; format long;
 filePath = mfilename('fullpath');
 [scriptPath,fileName,fileExt] = fileparts(filePath); cd(scriptPath);
-addpath(genpath('../../../../lib/matlab/')) % lib codes
+addpath(genpath('../../../../../../lib/matlab/')) % lib codes
 
 bootstrapRequested = 0;
 varFigExportRequested = 0;
@@ -17,8 +17,8 @@ kfacType = 'OneThird';
 
 Radio = readLloydRadioData(kfacType);
 
-Boot.outPath = '../out/';
-Boot.datPath = '../data/';
+Boot.outPath = '../../out/lloyd2019/';
+Boot.datPath = '../../data/lloyd2019/';
 Boot.filename = 'CorBootstrap.mat';
 
 % perform bootstrapping

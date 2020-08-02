@@ -10,7 +10,7 @@ function Radio = readLloydRadioData(kfacType)
     format compact; format long;
     filePath = mfilename('fullpath');
     [scriptPath,fileName,fileExt] = fileparts(filePath); cd(scriptPath);
-    addpath(genpath('../../../../lib/matlab/')) % lib codes
+    addpath(genpath('../../../../../../lib/matlab/')) % lib codes
 
     if nargin<1
         warning('no kfacType was provided as input to readLloydRadioData(). Assuming kfacType=''OneThird''')
@@ -34,7 +34,7 @@ function Radio = readLloydRadioData(kfacType)
 
 
     Radio.Path.src = scriptPath;
-    Radio.Path.input = '../data/';
+    Radio.Path.input = getFullPath( fullfile(scriptPath,"..","..","data","lloyd2019\") );
     Radio.Dark = importdata([Radio.Path.input,'radioDark.xlsx']);
     Radio.Dark.Zone.Val = 1.0 + Radio.Dark.data(:,4);
     Radio.Dark.Eiso.Val = Radio.Dark.data(:,2) * 10.0^52;
