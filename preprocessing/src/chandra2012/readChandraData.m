@@ -58,10 +58,14 @@ end
     ylim( [1e48,1e55] );
     xlabel('Peak Radio Luminosity at 8.5 GHz: L_{rad} [ erg / s / Hz ]', 'Interpreter', 'tex', 'fontSize', fontSize);
     ylabel('Isotropic Gamma-Ray Emission: E_{iso} [ erg ]        ', 'Interpreter', 'tex', 'fontSize', fontSize);
-    text( 0.05, 0.90, ['r = ',Chandra.LradEiso.Cor.Pearson.str], 'Units', 'normalized', 'HorizontalAlignment', 'left','Interpreter','tex', 'fontSize' , fontSize );
-    text( 0.05, 0.80, ['\rho = ',Chandra.LradEiso.Cor.Spearman.str], 'Units', 'normalized', 'HorizontalAlignment', 'left','Interpreter','tex', 'fontSize' , fontSize );
-    text( 0.05, 0.70, ['\tau = ',Chandra.LradEiso.Cor.Kendall.str], 'Units', 'normalized', 'HorizontalAlignment', 'left','Interpreter','tex', 'fontSize' , fontSize );
+    text( 0.05, 0.90, ['Pearson''s r = ',Chandra.LradEiso.Cor.Pearson.str], 'Units', 'normalized', 'HorizontalAlignment', 'left','Interpreter','tex', 'fontSize' , fontSize );
+    text( 0.05, 0.80, ['Spearman''s \rho = ',Chandra.LradEiso.Cor.Spearman.str], 'Units', 'normalized', 'HorizontalAlignment', 'left','Interpreter','tex', 'fontSize' , fontSize );
+    text( 0.05, 0.70, ['Kendall''s \tau = ',Chandra.LradEiso.Cor.Kendall.str], 'Units', 'normalized', 'HorizontalAlignment', 'left','Interpreter','tex', 'fontSize' , fontSize );
     set(gca, 'color', 'none', 'fontsize', fontSize);
+
+    % add the XRF
+
+    plot(1.484881e30,2.21864609e49,'.','markerSize',markerSize,"color","red");
 
 if figExportRequested
     fileName = fullfile(outPath,"ChandraLog10EradLog10Eiso.png");
