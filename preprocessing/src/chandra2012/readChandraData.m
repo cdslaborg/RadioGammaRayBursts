@@ -3,7 +3,7 @@ clear all;
 format compact; format long;
 filePath = mfilename('fullpath');
 [scriptPath,fileName,fileExt] = fileparts(filePath); scriptPath = string(scriptPath); cd(scriptPath);
-addpath(genpath("../../../../../lib/matlab/")) % lib codes
+addpath(genpath("../../../../../libmatlab/"),"-begin") % lib codes
 
 gitPath = getFullPath( fullfile(scriptPath,"..","..") );
 addpath(genpath(gitPath)) % git codes
@@ -16,10 +16,11 @@ filePath = fullfile(dataPath, "EradEiso.png");
 cd(scriptPath);
 outPath = fullfile( gitPath, "out", "Chandra2012" );
 if ~exist(outPath,'dir'), mkdir(outPath), end
-figExportRequested = 0;
 markerSize = 20;
 fontSize = 13;
 kfacType = 'OneThird';
+
+figExportRequested = 0;
 bivarFigExportRequested = 1;
 
 if strcmp(kfacType,'OneThird')
@@ -28,7 +29,10 @@ else
     error(['The input kfacType (',kfacType,') is not supported.']);
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot Chandra (2012) data in Figure 20
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 load(fullfile(dataPath,"ChandraLog10EradLog10Eiso.mat"));
 Chandra.LradEiso.Cor.Pearson.val = corr(ChandraLog10EradLog10Eiso(:,1),ChandraLog10EradLog10Eiso(:,2),'type','pearson');
 Chandra.LradEiso.Cor.Kendall.val = corr(ChandraLog10EradLog10Eiso(:,1),ChandraLog10EradLog10Eiso(:,2),'type','kendall');
@@ -37,7 +41,13 @@ Chandra.LradEiso.Cor.Pearson.str = num2str( sprintf('%0.2f', Chandra.LradEiso.Co
 Chandra.LradEiso.Cor.Kendall.str = num2str( sprintf('%0.2f', Chandra.LradEiso.Cor.Kendall.val ) ) ;
 Chandra.LradEiso.Cor.Spearman.str = num2str( sprintf('%0.2f', Chandra.LradEiso.Cor.Spearman.val ) ) ;
 
-if figExportRequested, close all, figure('visible','off','Color','none'), else, figure, end
+if figExportRequested
+    close all;
+    figure('visible','off','Color','none');
+else
+    figure;
+end
+
     hold on; box on; %colormap('cool');
     plot(10.0.^ChandraLog10EradLog10Eiso(:,1),1e51*10.0.^ChandraLog10EradLog10Eiso(:,2),'.','markerSize',markerSize);
 
@@ -61,8 +71,11 @@ else
     hold off;
 end
 
-
+return
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Chandra Sbol-SoptR plot
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 ChandraTableOneKnownEisoEoptZ = importdata(fullfile(dataPath,"ChandraTableOneKnownEisoEoptZ_clean.xlsx"));
 Chandra.FradSgam.Cor.Pearson.val = corr(ChandraTableOneKnownEisoEoptZ.data(:,4),ChandraTableOneKnownEisoEoptZ.data(:,6),'type','pearson');
 Chandra.FradSgam.Cor.Kendall.val = corr(ChandraTableOneKnownEisoEoptZ.data(:,4),ChandraTableOneKnownEisoEoptZ.data(:,6),'type','kendall');
@@ -71,7 +84,13 @@ Chandra.FradSgam.Cor.Pearson.str = num2str( sprintf('%0.2f', Chandra.FradSgam.Co
 Chandra.FradSgam.Cor.Kendall.str = num2str( sprintf('%0.2f', Chandra.FradSgam.Cor.Kendall.val ) ) ;
 Chandra.FradSgam.Cor.Spearman.str = num2str( sprintf('%0.2f', Chandra.FradSgam.Cor.Spearman.val ) ) ;
 
-if figExportRequested, close all, figure('visible','off','Color','none'), else, figure, end
+if figExportRequested
+    close all;
+    figure('visible','off','Color','none');
+else
+    figure;
+end
+
     hold on; box on; %colormap('cool');
     plot(ChandraTableOneKnownEisoEoptZ.data(:,4),ChandraTableOneKnownEisoEoptZ.data(:,6),'.','markerSize',20)
 
@@ -95,8 +114,10 @@ else
     hold off;
 end
 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % match Chandra Radio data with Table1 data
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 ChandraTableOne = importdata(fullfile(dataPath,"ChandraTableOne_clean.xlsx"));
 ChandraRadioPeakFlux = importdata(fullfile(dataPath,"ChandraRadioPeakFlux_clean.xlsx"));
 
@@ -111,7 +132,13 @@ Chandra.FradSgam.Cor.Pearson.str = num2str( sprintf('%0.2f', Chandra.FradSgam.Co
 Chandra.FradSgam.Cor.Kendall.str = num2str( sprintf('%0.2f', Chandra.FradSgam.Cor.Kendall.val ) ) ;
 Chandra.FradSgam.Cor.Spearman.str = num2str( sprintf('%0.2f', Chandra.FradSgam.Cor.Spearman.val ) ) ;
 
-if figExportRequested, close all, figure('visible','off','Color','none'), else, figure, end
+if figExportRequested
+    close all;
+    figure('visible','off','Color','none');
+else
+    figure;
+end
+
     hold on; box on; %colormap('cool');
     plot(DataX,DataY,'.','markerSize',20)
     xlim([1e1,1e5]);
@@ -133,12 +160,18 @@ else
     hold off;
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot peak radio flux at 8.46 GHz
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 UniqueFreq = unique(ChandraRadioPeakFlux.data(:,1));   % unique values
 UniqueFreq(:,2) = countmember(unique(ChandraRadioPeakFlux.data(:,1)),ChandraRadioPeakFlux.data(:,1)); % unique values counts in the sample
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % create Radio-Loud and Radio-Quiet ChandraTableOne
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 ChandraTableOne.Mask.ZoneKnown = ~isnan(ChandraTableOne.data(:,8));
 ChandraTableOne.Mask.T90zKnown = ~isnan(ChandraTableOne.data(:,7)) & ChandraTableOne.data(:,7)>1.0; % this observer-frame data, also exclude SGRBs
 ChandraTableOne.Mask.EisoKnown = ~isnan(ChandraTableOne.data(:,10));
@@ -209,8 +242,10 @@ for ivar = 1:Var.count-1
     end
 end
 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % now simulate the effects of Eiso cutoff threshold on the variable correlations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 Log10Eiso.lower = 48.;
 Log10Eiso.upper = 53.;
 Log10Eiso.delta = 0.02;
@@ -237,7 +272,9 @@ for i = Log10Eiso.count:-1:1
     end
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot correlation vs threshold
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 for ivar = 1:Var.count-1
     varNameI = Var.Name{ivar};
