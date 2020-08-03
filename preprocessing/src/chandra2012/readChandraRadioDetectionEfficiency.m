@@ -1,14 +1,14 @@
-readChandraFluxLimitTable % This gives the Poonam object
+% readChandraFluxLimitTable % This gives the Poonam object
 
 close all;
 %clear all;
 format compact; format long;
 filePath = mfilename('fullpath');
 [scriptPath,fileName,fileExt] = fileparts(filePath); cd(scriptPath);
-addpath(genpath('../../../../../../libmatlab/')) % lib codes
-addpath(genpath('../../')) % git codes
+addpath(genpath("../../../../../libmatlab/"),"-begin") % lib codes
+addpath(genpath("../../"),"-begin") % git codes
 
-transparencyRequested = 1;
+transparencyRequested = 0;
 figExportRequested = 1;
 markerSize = 20;
 lineWidth = 2;
@@ -20,6 +20,7 @@ else
 end
  
 
+figFileExt = '.pdf';
 dataPath = '../../data/chandra2012/';
 outPath = '../../out/chandra2012/';
 load([dataPath,'ChandraRadioDetectionEfficiency.mat']);
@@ -92,7 +93,7 @@ if figExportRequested, figure('visible','off','Color',backColor), else, figure, 
     set(gca,'color',backColor);
 
 if figExportRequested
-    fileName = [outPath,'ChandraRadioDetectionEfficiency.png'];
+    fileName = [outPath,'ChandraRadioDetectionEfficiency',figFileExt];
     %export_fig (fileName,'-dpdf -m2');
     export_fig (fileName,'-m4 -transparent');
     %print(gcf, '-dpdf', fileName);

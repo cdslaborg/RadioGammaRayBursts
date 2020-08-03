@@ -8,11 +8,6 @@ addpath(genpath("../../../../../libmatlab/"),"-begin") % lib codes
 gitPath = getFullPath( fullfile(scriptPath,"..","..") );
 addpath(genpath(gitPath)) % git codes
 
-dataPath = fullfile( gitPath, "data", "Chandra2012" );
-filePath = fullfile(dataPath, "EradEiso.png");
-
-%grabit();
-
 cd(scriptPath);
 outPath = fullfile( gitPath, "out", "Chandra2012" );
 if ~exist(outPath,'dir'), mkdir(outPath), end
@@ -20,8 +15,13 @@ markerSize = 20;
 fontSize = 13;
 kfacType = 'OneThird';
 
+figFileExt = ".pdf";
 figExportRequested = 1;
 bivarFigExportRequested = 1;
+
+dataPath = fullfile( gitPath, "data", "Chandra2012" );
+filePath = fullfile(dataPath, "LradEiso"+figFileExt);
+%grabit();
 
 if strcmp(kfacType,'OneThird')
     kfacVal = 0.66;
@@ -68,7 +68,7 @@ end
     plot(1.484881e30,2.21864609e49,'.','markerSize',markerSize,"color","red");
 
 if figExportRequested
-    fileName = fullfile(outPath,"ChandraLog10EradLog10Eiso.png");
+    fileName = fullfile(outPath,"ChandraLog10EradLog10Eiso"+figFileExt);
     export_fig (fileName,'-m4 -transparent');
     hold off; close(gcf);
 else
@@ -111,7 +111,7 @@ end
     set(gca, 'color', 'none', 'fontsize', fontSize);
 
 if figExportRequested
-    fileName = fullfile(outPath,"ChandraFoptSgam.png");
+    fileName = fullfile(outPath,"ChandraFoptSgam"+figFileExt);
     export_fig (fileName,'-m4 -transparent');
     hold off; close(gcf);
 else
@@ -157,7 +157,7 @@ end
     set(gca, 'color', 'none', 'fontsize', fontSize);
 
 if figExportRequested
-    fileName = fullfile(outPath,"ChandraFoptSgam.png");
+    fileName = fullfile(outPath,"ChandraFoptSgam"+figFileExt);
     export_fig(fileName,'-m4 -transparent');
     hold off; close(gcf);
 else
@@ -236,7 +236,7 @@ for ivar = 1:Var.count-1
             legend boxoff;
         set(gca, 'color', 'none', 'fontsize', fontSize);
         if bivarFigExportRequested
-            fileName = fullfile(outPath,"Chandra"+string(Var.Name{ivar})+string(Var.Name{jvar})+".png");
+            fileName = fullfile(outPath,"Chandra"+string(Var.Name{ivar})+string(Var.Name{jvar})+figFileExt);
             export_fig (fileName,'-m4 -transparent');
             hold off; close(gcf);
         else
@@ -314,7 +314,7 @@ for ivar = 1:Var.count-1
             legend boxoff;
             set(gca, 'color', 'none', 'fontsize', fontSize);
         if bivarFigExportRequested
-            fileName = fullfile(outPath,"ChandraEisoCutoff"+string(Var.Name{ivar})+string(Var.Name{jvar})+".png");
+            fileName = fullfile(outPath,"ChandraEisoCutoff"+string(Var.Name{ivar})+string(Var.Name{jvar})+figFileExt);
             export_fig (fileName,'-m4 -transparent');
             hold off; close(gcf);
         else

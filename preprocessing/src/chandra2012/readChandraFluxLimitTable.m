@@ -1,8 +1,8 @@
 close all;
 clear all;
 format compact; format long;
-addpath(genpath('../../../../../../libmatlab/')) % lib codes
-addpath(genpath('../../')) % git codes
+addpath(genpath("../../../../../libmatlab/"),"-begin") % lib codes
+addpath(genpath("../../"),"-begin") % git codes
 filePath = mfilename('fullpath');
 [scriptPath,fileName,fileExt] = fileparts(filePath); cd(scriptPath);
 
