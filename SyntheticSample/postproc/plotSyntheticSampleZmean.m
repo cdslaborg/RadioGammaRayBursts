@@ -3,20 +3,32 @@ clear all;
 format compact; format long;
 filePath = mfilename('fullpath');
 [scriptPath,fileName,fileExt] = fileparts(filePath); cd(scriptPath);
-addpath(genpath('../../../../../lib/matlab/')) % lib codes
+path.projects.root = getFullPath('../../../../','-lean'); addpath(genpath(fullfile(path.projects.root,'libmatlab')) % libmatlab codes
 
 zPlusOneRequested = 1;
 bivarPlotsRequested = 1;
 bivarFigExportRequested = 0;
 histFigExportRequested = 1;
 fontSize = 13;
-kfacType = 'kfacOneThird';
-syntheticSamplePath = ['../../winx64/intel/release/static/serial/bin/out/',kfacType,'/'];
+kfacType = "kfacOneThird";
+
+% setup path
+
+path.git.root = string(getFullPath('../../','-lean')); % getFullPath is called from libmatlab
+path.git.synsam.root = fullfile(path.git.root,"SyntheticSample");
+path.git.synsam.in.root = fullfile(path.git.synsam.root,"postproc");
+path.git.synsam.postproc.root = fullfile(path.git.synsam.root,"postproc");
+path.git.synsam.postproc.out.root = fullfile(path.git.postproc.root,"out");
+path.git.synsam.out.root = fullfile(path.git.synsam.root,"winx64","intel","release","static","serial","bin","out",kfacType);
+path.git.synsam.in.batse = fullfile(path.git.synsam.in.root,"batse_1366_lgrb_pbol_epk_sbol(0.001,20000).txt");
+path.git.synsam.in.ghirlanda08 = fullfile(path.git.synsam.in.root,"AmatiRelationGhirlanda2008.txt");
+
 %outPath = '../../out/';
-inPath = '../../in/';
+inPath = '../in/';
 
 % import BATSE data
-Dummy = importdata([inPath,'batse_1366_lgrb_pbol_epk_sbol(0.001,20000).txt']);
+
+Dummy = importdata(path.git.synsam.in.batse);
 Batse.LogData.Obs = [ Dummy.data(:,2) ... % logPbol
                     , Dummy.data(:,4) ... % logEpk
                     , Dummy.data(:,3) ... % logSbol
@@ -27,7 +39,8 @@ Batse.ngrb = length(Batse.Data.Obs(:,1));
 Batse.Trigger = Dummy.data(:,1);
 
 % import Amati relation data
-Ghirlanda08 = importdata([inPath,'AmatiRelationGhirlanda2008.txt']);
+
+Ghirlanda08 = importdata(path.git.synsam.in.ghirlanda08);
 
 % read synthetic data
 ZModel.count = 3;
@@ -111,7 +124,7 @@ for iVarPair = 1:nVarPair
 
         if ~isfield(ZModel,ZModel.ID{imodel})
 
-            ZModel.(ZModel.ID{imodel}).Synthetic = importdata([syntheticSamplePath,'syntheticSample',ZModel.ID{imodel},'.csv']);
+            ZModel.(ZModel.ID{imodel}).Synthetic = importdata([path.git.synsam.out.root,'syntheticSample',ZModel.ID{imodel},'.csv']);
             ZModel.(ZModel.ID{imodel}).Synthetic.data(:,1:8) = exp( ZModel.(ZModel.ID{imodel}).Synthetic.data(:,1:8) );
 
             % read redshift grid data
