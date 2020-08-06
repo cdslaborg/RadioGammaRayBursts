@@ -11,24 +11,18 @@ module ParaPost_mod
     integer(IK) , parameter :: NVAR = 4     ! number of GRB attributes used in the world model
 
     ! BATSE threshold parameters
-
     type :: Thresh_type
         real(RK) :: avg, invStdSqrt2
     end type Thresh_type
 
     ! Posterior sample
-
-    type :: ParaPostSampleFixedEiso_type
-        real(RK), allocatable   :: SchurComplement(:,:)
-    end type ParaPostSampleFixedEiso_type
-
     type :: ParaPostSample_type
-        ! order of variables: logLiso, logEpkz, logT90z, logEiso
+        ! order of variables: logLiso, logEpkz, logEiso, logT90z
         type(Thresh_type)       :: Thresh
         real(RK)                :: logFunc
         real(RK), allocatable   :: Avg(:), Std(:), CholFacLower(:,:), CholFacDiag(:)
-        real(RK), allocatable   :: ConAvg(:), ConStd(:), ConCholFacLower(:,:), ConCholFacDiag(:) ! conditionals given logEiso (last variable)
-        real(RK), allocatable   :: RegresCoefMat(:,:)
+        real(RK), allocatable   :: RegresCoefMat(:,:), SchurComplement(:,:)
+        real(RK), allocatable   :: ConMean(:,:)   ! conditional mean (1:NVAR-1,1:ndata)
     end type ParaPostSample_type
 
     type :: ParaPost_type
@@ -36,21 +30,19 @@ module ParaPost_mod
         integer(IK) :: numDepVar    ! number of dependent variables
         character(:), allocatable :: filePath
         type(ParaPostSample_type), allocatable :: Sample(:)
-    contains
-        procedure, pass :: getConAvg
     end type ParaPost_type
 
     interface ParaPost_type
         module procedure :: constructParaPost
     end interface ParaPost_type
 
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+!***********************************************************************************************************************************
+!***********************************************************************************************************************************
 
 contains
 
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+!***********************************************************************************************************************************
+!***********************************************************************************************************************************
 
     ! All parameters are assumed to be read in log Neper (not log10) from the input file, wherever needed.
     function constructParaPost(nsample,paraPostFilePath) result(ParaPost)
@@ -77,9 +69,10 @@ contains
         ParaPost%count = nsample
         ParaPost%numDepVar = ParaPost%ndim - 1_IK
         ParaPost%filePath = trim(adjustl(paraPostFilePath))
-
-        if (allocated(ParaPost%Sample)) deallocate(ParaPost%Sample); allocate(ParaPost%Sample(ParaPost%count))
-        if (allocated(ParaPostSample)) deallocate(ParaPostSample); allocate(ParaPostSample(ParaPost%count))
+        if (allocated(ParaPost%Sample)) deallocate(ParaPost%Sample)
+        allocate(ParaPost%Sample(ParaPost%count))
+        if (allocated(ParaPostSample)) deallocate(ParaPostSample)
+        allocate(ParaPostSample(ParaPost%count))
 
         write(output_unit,"(*(g0))")
 
@@ -90,19 +83,17 @@ contains
         read(ParaPost%fileUnit,*)
 
         ! This is the map from Eiso column to Durz in the covariance matrix
-
         Indx = [3]
         IndxMap = [4]
-
-        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        !%%%%                                           begin reading sample data                                           %%%%
-        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
         isample = 0_IK
         do isample = 1, ParaPost%count
 
-            ! read ParaPost sample properties
+            !*******************************************************************************************************************
+            !****                                         begin reading sample data                                         ****
+            !*******************************************************************************************************************
 
+            ! now read ParaPost sample properties
             allocate(ParaPostSample(isample)%Avg(ParaPost%ndim))
             allocate(ParaPostSample(isample)%Std(ParaPost%ndim))
             allocate(ParaPostSample(isample)%CholFacLower(ParaPost%ndim,ParaPost%ndim))
@@ -120,9 +111,9 @@ contains
 
             ParaPostSample(isample)%CholFacLower = transpose(ParaPostSample(isample)%CholFacLower)
 
-            !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            !%%%%                            begin transform of the sample to the original scales                           %%%%
-            !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            !*******************************************************************************************************************
+            !****                             begin transform of the sample to the original scales                          ****
+            !*******************************************************************************************************************
 
             ! threshold parameter: convert standard deviation to invStdSqrt2
             ParaPost%Sample(isample)%Thresh%invStdSqrt2 = INV_SQRT2 / exp(ParaPostSample(isample)%Thresh%invStdSqrt2)
@@ -148,9 +139,9 @@ contains
                 end do
             end do
 
-            !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            !%%%%                               begin swapping the position of Eiso and Durz                                %%%%
-            !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            !*******************************************************************************************************************
+            !****                                 begin swapping the position of Eiso and Durz                              ****
+            !*******************************************************************************************************************
 
             ! allocate ParaPost sample properties
             allocate(ParaPost%Sample(isample)%Avg(ParaPost%ndim))
@@ -173,86 +164,84 @@ contains
                 end do
             end do
 
-            !write(*,"(*(g0.8,:,','))")
-            !write(*,"(*(g0.8,:,','))") "Original"
-            !do i = 1,ParaPost%ndim
-            !    block
-            !        real(RK) :: Vec(NVAR)
-            !        Vec = ParaPostSample(isample)%CholFacLower(i,:)
-            !        write(*,"(*(F15.8,:))") Vec
-            !    end block
-            !end do
-            !
-            !write(*,"(*(g0.8,:,','))") "Modified"
-            !do i = 1,ParaPost%ndim
-            !    block
-            !        real(RK) :: Vec(NVAR)
-            !        Vec = ParaPost%Sample(isample)%CholFacLower(i,:)
-            !        write(*,"(*(F15.8,:))") Vec
-            !    end block
-            !end do
-            !write(*,"(*(g0.8,:,','))")
-            !read(*,*)
+!write(*,"(*(g0.8,:,','))")
+!write(*,"(*(g0.8,:,','))") "Original"
+!do i = 1,ParaPost%ndim
+!    block
+!        real(RK) :: Vec(NVAR)
+!        Vec = ParaPostSample(isample)%CholFacLower(i,:)
+!        write(*,"(*(F15.8,:))") Vec
+!    end block
+!end do
+!
+!write(*,"(*(g0.8,:,','))") "Modified"
+!do i = 1,ParaPost%ndim
+!    block
+!        real(RK) :: Vec(NVAR)
+!        Vec = ParaPost%Sample(isample)%CholFacLower(i,:)
+!        write(*,"(*(F15.8,:))") Vec
+!    end block
+!end do
+!write(*,"(*(g0.8,:,','))")
+!read(*,*)
 
-            ! get the conditional covariance matrix
-
+            ! get conditional covariance matrix
             if (allocated(ParaPost%Sample(isample)%RegresCoefMat)) deallocate(ParaPost%Sample(isample)%RegresCoefMat)
             allocate(ParaPost%Sample(isample)%RegresCoefMat(3_IK,1_IK))
             allocate(ParaPost%Sample(isample)%SchurComplement(3_IK,3_IK))
             call getRegresCoef  ( rankPDM           = NVAR &
                                 , rankS11           = ParaPost%numDepVar &
                                 , rankS22           = ParaPost%ndim - ParaPost%numDepVar &
-                                , PosDefMat         = ParaPost%Sample(isample)%CholFacLower &
-                                , RegresCoefMat     = ParaPost%Sample(isample)%RegresCoefMat &
-                                , SchurComplement   = ParaPost%Sample(isample)%SchurComplement &
+                                , PosDefMat         = ParaPost%Sample(isample)%CholFacLower     &
+                                , RegresCoefMat     = ParaPost%Sample(isample)%RegresCoefMat    &
+                                , SchurComplement   = ParaPost%Sample(isample)%SchurComplement  &
                                 )
             if (ParaPost%Sample(isample)%RegresCoefMat(1,1)<0._RK) then
                 write(*,"(*(g0,:,' '))") MODULE_NAME//": RegresCoefMat(1,1)<0._RK"
                 error stop
             end if
 
-            !write(*,"(*(g0,:,' '))")
-            !write(*,"(*(g0,:,' '))") "CovMat:", shape(ParaPost%Sample(isample)%CholFacLower)
-            !write(*,"(*(g0,:,' '))") ParaPost%Sample(isample)%CholFacLower(1,:)
-            !write(*,"(*(g0,:,' '))") ParaPost%Sample(isample)%CholFacLower(2,:)
-            !write(*,"(*(g0,:,' '))") ParaPost%Sample(isample)%CholFacLower(3,:)
-            !write(*,"(*(g0,:,' '))") ParaPost%Sample(isample)%CholFacLower(4,:)
-            !read(*,*)
+!write(*,"(*(g0,:,' '))")
+!write(*,"(*(g0,:,' '))") "CovMat:", shape(ParaPost%Sample(isample)%CholFacLower)
+!write(*,"(*(g0,:,' '))") ParaPost%Sample(isample)%CholFacLower(1,:)
+!write(*,"(*(g0,:,' '))") ParaPost%Sample(isample)%CholFacLower(2,:)
+!write(*,"(*(g0,:,' '))") ParaPost%Sample(isample)%CholFacLower(3,:)
+!write(*,"(*(g0,:,' '))") ParaPost%Sample(isample)%CholFacLower(4,:)
+!read(*,*)
 
-            !write(*,"(*(g0,:,' '))")
-            !write(*,"(*(g0,:,' '))") "Schur:", shape(ParaPost%Sample(isample)%SchurComplement)
-            !write(*,"(*(g0,:,' '))") ParaPost%Sample(isample)%SchurComplement(1,:)
-            !write(*,"(*(g0,:,' '))") ParaPost%Sample(isample)%SchurComplement(2,:)
-            !write(*,"(*(g0,:,' '))") ParaPost%Sample(isample)%SchurComplement(3,:)
-            !read(*,*)
+!write(*,"(*(g0,:,' '))")
+!write(*,"(*(g0,:,' '))") "Schur:", shape(ParaPost%Sample(isample)%SchurComplement)
+!write(*,"(*(g0,:,' '))") ParaPost%Sample(isample)%SchurComplement(1,:)
+!write(*,"(*(g0,:,' '))") ParaPost%Sample(isample)%SchurComplement(2,:)
+!write(*,"(*(g0,:,' '))") ParaPost%Sample(isample)%SchurComplement(3,:)
+!read(*,*)
 
             ! get the Cholesky factor
-
             allocate(ParaPost%Sample(isample)%CholFacDiag(ParaPost%numDepVar))
             deallocate(ParaPost%Sample(isample)%CholFacLower)
             allocate( ParaPost%Sample(isample)%CholFacLower, source = ParaPost%Sample(isample)%SchurComplement )
 
-            !write(*,"(*(g0,:,' '))")
-            !write(*,"(*(g0,:,' '))") "Chol=Schur:", shape(ParaPost%Sample(isample)%CholFacLower)
-            !write(*,"(*(g0,:,' '))") ParaPost%Sample(isample)%CholFacLower(1,:)
-            !write(*,"(*(g0,:,' '))") ParaPost%Sample(isample)%CholFacLower(2,:)
-            !write(*,"(*(g0,:,' '))") ParaPost%Sample(isample)%CholFacLower(3,:)
-            !write(*,"(*(g0,:,' '))") "Diag:", ParaPost%Sample(isample)%CholFacDiag
-            !read(*,*)
+!write(*,"(*(g0,:,' '))")
+!write(*,"(*(g0,:,' '))") "Chol=Schur:", shape(ParaPost%Sample(isample)%CholFacLower)
+!write(*,"(*(g0,:,' '))") ParaPost%Sample(isample)%CholFacLower(1,:)
+!write(*,"(*(g0,:,' '))") ParaPost%Sample(isample)%CholFacLower(2,:)
+!write(*,"(*(g0,:,' '))") ParaPost%Sample(isample)%CholFacLower(3,:)
+!write(*,"(*(g0,:,' '))") "Diag:", ParaPost%Sample(isample)%CholFacDiag
+!read(*,*)
 
             call getCholeskyFactor  ( nd = ParaPost%numDepVar &
                                     , PosDefMat = ParaPost%Sample(isample)%CholFacLower &
                                     , Diagonal  = ParaPost%Sample(isample)%CholFacDiag &
                                     )
 
-            !write(*,"(*(g0,:,' '))")
-            !write(*,"(*(g0,:,' '))") "Chol:", shape(ParaPost%Sample(isample)%CholFacLower)
-            !write(*,"(*(g0,:,' '))") ParaPost%Sample(isample)%CholFacLower(1,:)
-            !write(*,"(*(g0,:,' '))") ParaPost%Sample(isample)%CholFacLower(2,:)
-            !write(*,"(*(g0,:,' '))") ParaPost%Sample(isample)%CholFacLower(3,:)
-            !write(*,"(*(g0,:,' '))") "Diag:", ParaPost%Sample(isample)%CholFacDiag
-            !write(*,"(*(g0,:,' '))")
-            !read(*,*)
+!write(*,"(*(g0,:,' '))")
+!write(*,"(*(g0,:,' '))") "Chol:", shape(ParaPost%Sample(isample)%CholFacLower)
+!write(*,"(*(g0,:,' '))") ParaPost%Sample(isample)%CholFacLower(1,:)
+!write(*,"(*(g0,:,' '))") ParaPost%Sample(isample)%CholFacLower(2,:)
+!write(*,"(*(g0,:,' '))") ParaPost%Sample(isample)%CholFacLower(3,:)
+!write(*,"(*(g0,:,' '))") "Diag:", ParaPost%Sample(isample)%CholFacDiag
+!write(*,"(*(g0,:,' '))")
+!read(*,*)
 
             if (ParaPost%Sample(isample)%CholFacDiag(1)<0._RK) then
                 write(*,*) "FATAL: Covariance Matrix corresponding to the parameter sample ", isample, "not positive-definite."
@@ -260,9 +249,9 @@ contains
                 error stop
             end if
 
-            !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            !%%%%                                           report time and progress                                        %%%%
-            !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            !*******************************************************************************************************************
+            !****                                           report time and progress                                        ****
+            !*******************************************************************************************************************
 
             call Timer%toc()
             itick = itick + 1
@@ -274,18 +263,13 @@ contains
             if (itick==4) itick = 0
 
         end do
-
-        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        !%%%%                                             end reading sample data                                           %%%%
-        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
         write(output_unit,"(*(g0))")
         close(ParaPost%fileUnit)
 
     end function constructParaPost
 
 
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+!***********************************************************************************************************************************
+!***********************************************************************************************************************************
 
 end module ParaPost_mod
