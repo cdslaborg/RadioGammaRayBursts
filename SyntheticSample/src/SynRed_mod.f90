@@ -8,7 +8,7 @@ module SynRed_mod
     character(*), parameter :: MODULE_NAME = "@SynRed_mod"
 
     type :: RedshiftSample_type
-        real(RK) :: z, logzplus1, logLisoLogPbolDiff, logEisoLogSbolDiff
+        real(RK) :: z, logZone, logLisoLogPbolDiff, logEisoLogSbolDiff
     end type RedshiftSample_type
 
     type :: SynRed_type
@@ -33,37 +33,32 @@ contains
     ! All parameters are assumed to be in log Neper (not log10) wherever needed.
     function constructSynRed(redshiftChainFilePath) result(SynRed)
 
-       !use, intrinsic :: iso_fortran_env, only: output_unit
-        use ParaDRAMChainFileContents_mod, only: ChainFileContents_type
-        use Astro_mod, only: LOGMPC2CMSQ4PI, getLogLumDisWicMpc
+        !use, intrinsic :: iso_fortran_env, only: output_unit
+        use Cosmology_mod, only: LOGMPC2CMSQ4PI, getLogLumDisWicMpc
         use Constants_mod, only: IK, RK
         implicit none
 
-        character(*), intent(in)                        :: redshiftChainFilePath
-        type(SynRed_type)                    :: SynRed
+        character(*), intent(in)        :: redshiftChainFilePath
+        type(SynRed_type)               :: SynRed
 
-        character(*), parameter                         :: PROCEDURE_NAME = MODULE_NAME//"@getModelIntegral()"
-        integer(IK)                                     :: isample
-        real(RK)                                        :: zplus1, twiceLogLumDisMpc
-        type(ChainFileContents_type)                    :: ChainFileContents
+        character(*), parameter         :: PROCEDURE_NAME = MODULE_NAME//"@getModelIntegral()"
+        integer(IK)                     :: isample, fileUnit
+        real(RK)                        :: zone, twiceLogLumDisMpc, Dummy(6)
 
         SynRed%filePath = trim(adjustl(redshiftChainFilePath))
-        call ChainFileContents%get(SynRed%filePath)
-        if (ChainFileContents%Err%occurred) then
-            ChainFileContents%Err%msg = PROCEDURE_NAME//ChainFileContents%Err%msg
-            return
-        end if
 
-        SynRed%count = ChainFileContents%chainSize
-        if (allocated(SynRed%Sample)) deallocate(SynRed%Sample)
-        allocate(SynRed%Sample(SynRed%count))
+        SynRed%count = 277000
+        if (allocated(SynRed%Sample)) deallocate(SynRed%Sample); allocate(SynRed%Sample(SynRed%count))
+
+        open(newunit = fileUnit, file = SynRed%filePath, status = "old")
+        read(fileUnit,*)
         do isample = 1,SynRed%count
-            SynRed%Sample(isample)%z = ChainFileContents%SampleVariable(1,isample)
-            zplus1 = SynRed%Sample(isample)%z + 1._RK
-            twiceLogLumDisMpc = 2 * getLogLumDisWicMpc(zplus1)
-            SynRed%Sample(isample)%logzplus1           = log(zplus1)
+            read(fileUnit,*) Dummy(1:6), SynRed%Sample(isample)%z
+            zone = SynRed%Sample(isample)%z + 1._RK
+            twiceLogLumDisMpc = 2 * getLogLumDisWicMpc(zone)
+            SynRed%Sample(isample)%logZone = log(zone)
             SynRed%Sample(isample)%logLisoLogPbolDiff  = LOGMPC2CMSQ4PI + twiceLogLumDisMpc
-            SynRed%Sample(isample)%logEisoLogSbolDiff  = LOGMPC2CMSQ4PI + twiceLogLumDisMpc - SynRed%Sample(isample)%logzplus1
+            SynRed%Sample(isample)%logEisoLogSbolDiff  = LOGMPC2CMSQ4PI + twiceLogLumDisMpc - SynRed%Sample(isample)%logZone
         end do
 
     end function constructSynRed

@@ -67,7 +67,7 @@ if (nicoleEisoEnabled) then
     NicoleRadioDark     = NicoleRadio_type  ( nsample   = NUM_NICOLE_RADIO_DARK &
                                             , filePath  = trim(adjustl(nicoleRadioFilePathDark)) )
 
-    NicoleRadioBright   = NicoleRadio_type  ( nsample   = NUM_NICOLE_RADIO_Bright &
+    NicoleRadioBright   = NicoleRadio_type  ( nsample   = NUM_NICOLE_RADIO_BRIGHT &
                                             , filePath  = trim(adjustl(nicoleRadioFilePathBright)) )
 
 end if
@@ -93,14 +93,14 @@ do imodel = 1, N_SFR_MODEL
         trim(adjustl(StarFormationModel(imodel))) == "H06" &
         .or. &
         !trim(adjustl(StarFormationModel(imodel))) == "L08" &
-        .or. &
+        !.or. &
         trim(adjustl(StarFormationModel(imodel))) == "B10" &
         ) then
 
         ! Read the LGRB world model parameters
 
         ParaPost = ParaPost_type( nsample = NSAMPLE_DEFAULT &
-                                , paraPostFilePath = trim(adjustl(ParaPostFilePath(imodel))) &
+                                , sampleFilePath = trim(adjustl(ParaPostFilePath(imodel))) &
                                 )
 
         if (nicoleEisoEnabled .and. nicoleZoneEnabled) then

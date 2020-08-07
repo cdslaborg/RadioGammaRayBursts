@@ -27,9 +27,11 @@ Poonam.RadioFreqUniq(:).count = countmember( Poonam.RadioFreqUniq(:).value , Poo
 
 Poonam.SortedRMS3 = sort( Poonam.RadioFluxDensityRMS3(Poonam.Mask.Freq8.NonDetect.Day510) );
 [Poonam.SortedRMS3CDF,Poonam.SortedRMS3] = ecdf( Poonam.SortedRMS3 );
-plot(Poonam.SortedRMS3, Poonam.SortedRMS3CDF)
-set(gca,'xscale','log');
-xlim([20,1e5]);
+figure; hold on; box on;
+    plot(Poonam.SortedRMS3, Poonam.SortedRMS3CDF)
+    set(gca,'xscale','log');
+    xlim([20,1e5]);
+hold off;
 
 return
 

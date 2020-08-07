@@ -37,7 +37,7 @@ contains
         use ParaPost_mod, only: ParaPost_type, Thresh_type
         use CorrCoef_mod, only: CorrCoefSpearman_type
         use Statistics_mod, only: getRandInt, getRandMVN, getMean, getVariance
-        use BandModel_mod, only: getPhotonFluenceFromEnergyFluence
+        use BandSpectrum_mod, only: getPhotonFluenceFromEnergyFluence
         use TranGaus_mod, only: getTranGaus
         use Timer_mod, only: Timer_type
         use Batse_mod, only: getLogPF53
@@ -51,24 +51,29 @@ contains
         type(NicoleRadio_type), intent(in), optional    :: NicoleRadio
         type(SynRed_type), intent(in), optional         :: SynRed
         real(RK), intent(in), optional                  :: Log10LisoRange(2)
-
         type(Err_type)                                  :: Err
+
         type(CorrCoefSpearman_type)                     :: CorZoneEiso, CorZoneDurz, CorEisoDurz
         logical                                         :: nicoleEisoUsed
         logical                                         :: synSamEisoUsed
         logical                                         :: synRedZoneUsed
         logical                                         :: nicoleZoneUsed
+        real(RK)                                        :: logLisoLogPbolDiff
+        real(RK)                                        :: logEisoLogSbolDiff
         real(RK)                                        :: Log10LisoLimit(2)
+        real(RK)                                        :: logZone
 
-        real(RK), parameter                             :: LOGEISO_LOWER_LIM = 52._RK * LN10, LOGEISO_UPPER_LIM = 60._RK * LN10
+        real(RK), parameter                             :: LOGEISO_LOWER_LIM = 52._RK * LN10
+        real(RK), parameter                             :: LOGEISO_UPPER_LIM = 60._RK * LN10
         real(RK)                                        :: logPF53, normedLogPF53, unifrnd
-        real(RK), allocatable                           :: GrbIntDep(:), NicoleSynSam(:,:)
+        real(RK), allocatable                           :: GrbIntDep(:) ! GRB dependent intrinsics
+        real(RK), allocatable                           :: NicoleSynSam(:,:)
         integer(IK)                                     :: isim, isample, iParaPost, iRedshift, fileUnit, itick, inicole, ivar, sampleSize!, fileUnitSample
         integer(IK)                                     :: numSumStat   ! number of event variables whose statistics will be computed
         real(RK), allocatable                           :: Vector(:), SampleMean(:), SampleVariance(:)
         type(Timer_type)                                :: Timer
 
-#ifdef SWIFT_ENABLED
+#if defined SWIFT_B07_THRESH_ENABLED || defined SWIFT_B10_THRESH_ENABLED
         ! Swift detection parameters
         real(RK), parameter                             :: SWIFT_INV_STD_LOG_THRESH_SQRT2 = 1._RK / (0.1_RK * LN10 * SQRT2)
         real(RK), parameter                             :: SWIFT_AVG_LOG_THRESH_B07 = log(3._RK)
@@ -121,6 +126,12 @@ contains
 
         !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+        numSumStat = ParaPost%ndim * 2 + 2 ! number of ummary statistics
+
+        allocate(Vector(numSumStat))
+        allocate(SampleMean(numSumStat))
+        allocate(SampleVariance(numSumStat))
+
         nicoleEisoUsed = present(NicoleRadio)
         synSamEisoUsed = .not. nicoleEisoUsed
         synRedZoneUsed = present(SynRed)
@@ -135,12 +146,11 @@ contains
             if (allocated(NicoleSynSam)) deallocate(NicoleSynSam)
             allocate(NicoleSynSam(numSumStat,sampleSize))
             do iParaPost = 1, ParaPost%count
-                if (allocated(ParaPost%Sample(iParaPost)%ConMean)) deallocate(ParaPost%Sample(iParaPost)%ConMean)
-                allocate(ParaPost%Sample(iParaPost)%ConMean(ParaPost%numDepVar,sampleSize))
+                if (allocated(ParaPost%Sample(iParaPost)%ConAvg)) deallocate(ParaPost%Sample(iParaPost)%ConAvg); allocate(ParaPost%Sample(iParaPost)%ConAvg(ParaPost%numDepVar,sampleSize))
                 if (nicoleEisoUsed) then
-                    NicoleSynSam(4,:) = NicoleRadio%LogEiso
                     do isample = 1, sampleSize
-                        ParaPost%Sample(iParaPost)%ConMean(:,isample)   = ParaPost%Sample(iParaPost)%Avg(1:ParaPost%numDepVar) &
+                        NicoleSynSam(4,isample) = NicoleRadio%LogEiso(isample)
+                        ParaPost%Sample(iParaPost)%ConAvg(:,isample)    = ParaPost%Sample(iParaPost)%Avg(1:ParaPost%numDepVar) &
                                                                         + ParaPost%Sample(iParaPost)%RegresCoefMat(1:ParaPost%numDepVar,1) &
                                                                         * ( NicoleSynSam(4,isample) - ParaPost%Sample(iParaPost)%Avg(4) )
                     end do
@@ -150,6 +160,7 @@ contains
         else
 
             sampleSize = 60_IK  ! average of Dark and Bright sample sizes
+            if (allocated(ParaPost%Sample(iParaPost)%ConAvg)) deallocate(ParaPost%Sample(iParaPost)%ConAvg); allocate(ParaPost%Sample(iParaPost)%ConAvg(ParaPost%numDepVar,sampleSize))
 
             if (present(Log10LisoRange)) then
                 Log10LisoLimit = Log10LisoRange * LN10
@@ -169,12 +180,6 @@ contains
         itick = 0
         call Timer%tic()
 
-        numSumStat = ParaPost%ndim * 2 + 2 ! number of ummary statistics
-
-        allocate(Vector(numSumStat))
-        allocate(SampleMean(numSumStat))
-        allocate(SampleVariance(numSumStat))
-
         ! simulate samples
 
         allocate(GrbIntDep(ParaPost%numDepVar))
@@ -185,8 +190,8 @@ contains
 
             !write(*,"(*(g0))")
             !write(*,"(*(g0))") "Avg: ", ParaPost%Sample(iParaPost)%Avg
-            !write(*,"(*(g0))") "Low: ", ParaPost%Sample(iParaPost)%CholFacLower
-            !write(*,"(*(g0))") "Dia: ", ParaPost%Sample(iParaPost)%CholFacDiag
+            !write(*,"(*(g0))") "Low: ", ParaPost%Sample(iParaPost)%ConCholFacLower
+            !write(*,"(*(g0))") "Dia: ", ParaPost%Sample(iParaPost)%ConCholFacDiag
             !write(*,"(*(g0))")
 
             !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -194,53 +199,62 @@ contains
             loopNicole: do inicole = 1, sampleSize
 
                 if (synSamEisoUsed) then
-                    do isample = 1, sampleSize
-                        NicoleSynSam(4,isample) = getTranGaus   ( Log10LisoLimit(1) &
-                                                                , Log10LisoLimit(2) &
-                                                                , ParaPost%Sample(iParaPost)%Avg(4) &
-                                                                , ParaPost%Sample(iParaPost)%Std(4) &
-                                                                )
-                        ParaPost%Sample(iParaPost)%ConMean(:,isample)   = ParaPost%Sample(iParaPost)%Avg(1:ParaPost%numDepVar) &
-                                                                        + ParaPost%Sample(iParaPost)%RegresCoefMat(1:ParaPost%numDepVar,1) &
-                                                                        * ( NicoleSynSam(4,isample) - ParaPost%Sample(iParaPost)%Avg(4) )
-                    end do
+                    NicoleSynSam(4,inicole) = getTranGaus   ( Log10LisoLimit(1) &
+                                                            , Log10LisoLimit(2) &
+                                                            , ParaPost%Sample(iParaPost)%Avg(4) &
+                                                            , ParaPost%Sample(iParaPost)%Std(4) &
+                                                            )
+                    ParaPost%Sample(iParaPost)%ConAvg(:,inicole)    = ParaPost%Sample(iParaPost)%Avg(1:ParaPost%numDepVar) &
+                                                                    + ParaPost%Sample(iParaPost)%RegresCoefMat(1:ParaPost%numDepVar,1) &
+                                                                    * ( NicoleSynSam(4,inicole) - ParaPost%Sample(iParaPost)%Avg(4) )
                 end if
 
-                ! detect an event
+                ! generate events until one is detected
 
                 loopDetection: do
 
                     GrbIntDep = getRandMVN  ( nd = ParaPost%numDepVar &
-                                            , MeanVec = ParaPost%Sample(iParaPost)%ConMean(:,inicole) &
-                                            , CholeskyLower = ParaPost%Sample(iParaPost)%CholFacLower &
-                                            , Diagonal = ParaPost%Sample(iParaPost)%CholFacDiag &
+                                            , MeanVec = ParaPost%Sample(iParaPost)%ConAvg(:,inicole) &
+                                            , CholeskyLower = ParaPost%Sample(iParaPost)%ConCholFacLower &
+                                            , Diagonal = ParaPost%Sample(iParaPost)%ConCholFacDiag &
                                             )
-                    iRedshift = getRandInt(1,SynRed%count)
 
                     ! rest-frame properties
 
                     NicoleSynSam(1:3,inicole) = GrbIntDep
 
+                    ! assign redshift to ith event in the sample
+
+                    if (present(SynRed)) then
+                        iRedshift = getRandInt(1,SynRed%count)
+                        logLisoLogPbolDiff = SynRed%Sample(iRedshift)%logLisoLogPbolDiff
+                        logEisoLogSbolDiff = SynRed%Sample(iRedshift)%logEisoLogSbolDiff
+                        logZone = SynRed%Sample(iRedshift)%logZone
+                    else
+                        logLisoLogPbolDiff = NicoleRadio%LogLisoLogPbolDiff(inicole)
+                        logEisoLogSbolDiff = NicoleRadio%LogEisoLogSbolDiff(inicole)
+                        logZone = NicoleRadio%LogZone(inicole)
+                    end if
+
                     ! observer-frame properties
 
-                    NicoleSynSam(5,inicole) = NicoleSynSam(1,inicole) - SynRed%Sample(iRedshift)%logLisoLogPbolDiff ! LogLiso -> LogPbol
-                    NicoleSynSam(6,inicole) = NicoleSynSam(2,inicole) - SynRed%Sample(iRedshift)%logzplus1          ! LogEpkz -> LogEpk
-
-                    NicoleSynSam(8,inicole) = NicoleSynSam(4,inicole) - SynRed%Sample(iRedshift)%logEisoLogSbolDiff ! LogEiso -> LogSbol
+                    NicoleSynSam(5,inicole) = NicoleSynSam(1,inicole) - logLisoLogPbolDiff  ! LogLiso -> LogPbol
+                    NicoleSynSam(8,inicole) = NicoleSynSam(4,inicole) - logEisoLogSbolDiff  ! LogEiso -> LogSbol
+                    NicoleSynSam(6,inicole) = NicoleSynSam(2,inicole) - logZone             ! LogEpkz -> LogEpk
 #ifdef kfacOneThird
-                    NicoleSynSam(7,inicole) = NicoleSynSam(3,inicole) + SynRed%Sample(iRedshift)%logzplus1 * TIME_DILATION_EXPO ! LogDurz -> LogDur
+                    NicoleSynSam(7,inicole) = NicoleSynSam(3,inicole) + logZone * TIME_DILATION_EXPO ! LogDurz -> LogDur
 #else
-                    NicoleSynSam(7,inicole) = NicoleSynSam(3,inicole) + SynRed%Sample(iRedshift)%logzplus1  ! LogDurz -> LogDur
+                    NicoleSynSam(7,inicole) = NicoleSynSam(3,inicole) + logZone  ! LogDurz -> LogDur
 #endif
 
                     ! compute the probability of detection
 
-#ifdef SWIFT_ENABLED
+#if defined SWIFT_B07_THRESH_ENABLED
 
                     invSqrtT90Obs = 1._RK / sqrt(exp(NicoleSynSam(7,inicole)))
 
                     ! get the bolometric photon fluence
-                    ! According to Butler et al 2007/2010, detection quantity for Swift is Nbol / sqrt(T90)
+                    ! According to Butler et al 2007/2010, the detection quantity for Swift is Nbol / sqrt(T90)
 
                     call getPhotonFluenceFromEnergyFluence  ( energyFluence = exp(NicoleSynSam(8,inicole)+LOG_ERG2KEV)  &
                                                             , lowerLim      = 1.e-1_RK                                  &
@@ -264,36 +278,43 @@ contains
                     probDetectionSwiftB07 = 0.5_RK + 0.5_RK * erf( real( normedEffectivePhotonFluenceB07 , kind=SPR ) )
                     NicoleSynSam(10,inicole) = 0.5_RK + 0.5_RK * erf( real( probDetectionSwiftB07 , kind=SPR ) ) ! probDetection
 
-                    !! get the bolometric photon fluence
-                    !call getPhotonFluenceFromEnergyFluence  ( energyFluence = exp(NicoleSynSam(8,inicole)+LOG_ERG2KEV)  &
-                    !                                        , lowerLim      = 1.e-1_RK                                  &
-                    !                                        , upperLim      = 2.e+4_RK                                  &
-                    !                                        , epk           = exp(NicoleSynSam(6,inicole))              &
-                    !                                        , alpha         = -1.1_RK                                   &
-                    !                                        , beta          = -2.3_RK                                   &
-                    !                                        , tolerance     = 1.e-5_RK                                  &
-                    !                                        , photonFluence = photonFluence15150                        &
-                    !                                        , Err           = Err                                       &
-                    !                                        , lowerLimNew   = 15._RK                                    &
-                    !                                        , upperLimNew   = 150._RK                                   &
-                    !                                        )
-                    !if (Err%occurred) then
-                    !    write(*,"(*(g0,:,' '))") Err%msg
-                    !    write(*,"(*(g0,:,' '))") "Err%stat: ", Err%stat
-                    !    error stop
-                    !end if
-                    !! get probability of detection by Swift according to Butler 2010
-                    !normedEffectivePhotonFluenceB10 = SWIFT_INV_STD_LOG_THRESH_SQRT2 * ( log(photonFluence15150*invSqrtT90Obs) - SWIFT_AVG_LOG_THRESH_B10 )     ! Nbol / sqrt(T90)
-                    !probDetectionSwiftB10 = 0.5_RK + 0.5_RK * erf( real( normedEffectivePhotonFluenceB10 , kind=SPR ) )
-                    !NicoleSynSam(10,inicole) = 0.5_RK + 0.5_RK * erf( real( probDetectionSwiftB10 , kind=SPR ) ) ! probDetection
+#elif defined SWIFT_B10_THRESH_ENABLED
 
-#else
+                    ! get the bolometric photon fluence
+
+                    call getPhotonFluenceFromEnergyFluence  ( energyFluence = exp(NicoleSynSam(8,inicole)+LOG_ERG2KEV)  &
+                                                            , lowerLim      = 1.e-1_RK                                  &
+                                                            , upperLim      = 2.e+4_RK                                  &
+                                                            , epk           = exp(NicoleSynSam(6,inicole))              &
+                                                            , alpha         = -1.1_RK                                   &
+                                                            , beta          = -2.3_RK                                   &
+                                                            , tolerance     = 1.e-5_RK                                  &
+                                                            , photonFluence = photonFluence15150                        &
+                                                            , Err           = Err                                       &
+                                                            , lowerLimNew   = 15._RK                                    &
+                                                            , upperLimNew   = 150._RK                                   &
+                                                            )
+                    if (Err%occurred) then
+                        write(*,"(*(g0,:,' '))") Err%msg
+                        write(*,"(*(g0,:,' '))") "Err%stat: ", Err%stat
+                        error stop
+                    end if
+                    ! get probability of detection by Swift according to Butler 2010
+                    normedEffectivePhotonFluenceB10 = SWIFT_INV_STD_LOG_THRESH_SQRT2 * ( log(photonFluence15150*invSqrtT90Obs) - SWIFT_AVG_LOG_THRESH_B10 )     ! Nbol / sqrt(T90)
+                    probDetectionSwiftB10 = 0.5_RK + 0.5_RK * erf( real( normedEffectivePhotonFluenceB10 , kind=SPR ) )
+                    NicoleSynSam(10,inicole) = 0.5_RK + 0.5_RK * erf( real( probDetectionSwiftB10 , kind=SPR ) ) ! probDetection
+
+#elif defined BATSE_THRESH_ENABLED
 
                     ! get the photon flux in 50-300 BATSE detection energy range
 
                     logPF53 = getLogPF53(logEpk=NicoleSynSam(6,inicole),logPbol=NicoleSynSam(5,inicole))
                     normedLogPF53 = ParaPost%Sample(iParaPost)%Thresh%invStdSqrt2 * ( logPF53 - ParaPost%Sample(iParaPost)%Thresh%avg )
                     NicoleSynSam(10,inicole) = 0.5_RK + 0.5_RK * erf( real( normedLogPF53 , kind=SPR ) ) ! probDetection
+
+#else
+
+#error "Unrecognized threshold in SynSam_mod.f90."
 
 #endif
 
@@ -307,7 +328,7 @@ contains
                 ! convert detection prob to log scale
 
                 !NicoleSynSam(10,inicole) = log( NicoleSynSam(10,inicole) )
-                NicoleSynSam(9,inicole) = SynRed%Sample(iRedshift)%logzplus1    ! log(redshift + 1) or LogZone
+                NicoleSynSam(9,inicole) = logZone ! log(redshift + 1) or LogZone
 
                 !write(fileUnitSample,"(*(g0.8,:,','))") NicoleSynSam(:,inicole)
 

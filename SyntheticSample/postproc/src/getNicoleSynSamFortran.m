@@ -1,11 +1,11 @@
 close all;
 clear all;
 format compact; format long;
-path.projects.dir = getFullPath("../../../../../","-lean"); % getFullPath is called from libmatlab
-addpath(genpath(fullfile(path.projects.dir,"libmatlab")),"-begin") % libmatlab codes
+addpath(genpath("../../../../../libmatlab"),"-begin") % libmatlab codes
 filePath = mfilename("fullpath");
 [scriptPath,fileName,fileExt] = fileparts(filePath); cd(scriptPath);
 
+path.projects.dir = getFullPath("../../../../../","-lean"); % getFullPath is called from libmatlab
 path.git.dir = string(getFullPath(fullfile(path.projects.dir,"20190419_RadioGRBs","git")));
 addpath(genpath(fullfile(path.git.dir)),"-begin") % libmatlab codes
 
@@ -29,10 +29,19 @@ path.git.synsam.in.ghirlanda08 = fullfile(path.git.synsam.in.dir,"AmatiRelationG
 path.git.synsam.postproc.dir = fullfile(path.git.synsam.dir,"postproc");
 path.git.synsam.postproc.src.dir = fullfile(path.git.synsam.postproc.dir,"src");
 path.git.synsam.postproc.out.dir = fullfile(path.git.synsam.postproc.dir,"out");
-path.git.synsam.out.dir = fullfile(path.git.synsam.dir,"winx64","intel","release","static","serial","bin","out","kfac"+kfacType);
-path.git.synsam.out.synsam = fullfile(path.git.synsam.out.dir,"syntheticSampleB10Dark.csv");
+
+path.git.synsam.out.dir = fullfile(path.git.synsam.dir,"winx64Old","intel","release","static","serial","bin","out","kfac"+kfacType);
 path.git.synsam.out.nssDarkB10 = fullfile(path.git.synsam.out.dir,"syntheticSampleB10Dark.csv");
-path.git.synsam.out.nssBrightB10 = fullfile(path.git.synsam.out.dir,"syntheticSampleB10_B10detectionCriterion.csv");
+path.git.synsam.out.nssBrightB10 = fullfile(path.git.synsam.out.dir,"syntheticSampleB10Bright.csv");
+path.git.synsam.out.nssDarkH06 = fullfile(path.git.synsam.out.dir,"syntheticSampleH06Dark.csv");
+path.git.synsam.out.nssBrightH06 = fullfile(path.git.synsam.out.dir,"syntheticSampleH06Bright.csv");
+%path.git.synsam.out.synsam = fullfile(path.git.synsam.out.dir,"syntheticSampleB10Dark.csv");
+
+%path.git.synsam.out.dir = fullfile(path.git.synsam.dir,"build","winx64","intel","19.0.4.245","release","static","heap","serial","fortran","kfac"+kfacType,"bin","out");
+%path.git.synsam.out.nssDarkB10 = fullfile(path.git.synsam.out.dir,"synSamB10Dark.csv");
+%path.git.synsam.out.nssBrightB10 = fullfile(path.git.synsam.out.dir,"synSamB10Bright.csv");
+%path.git.synsam.out.nssDarkH06 = fullfile(path.git.synsam.out.dir,"synSamH06Dark.csv");
+%path.git.synsam.out.nssBrightH06 = fullfile(path.git.synsam.out.dir,"synSamH06Bright.csv");
 
 figure; hold on; box on;
 h1 = histogram(Nicole.Dark.LogEiso.Val/log(10));
@@ -44,10 +53,14 @@ hold off;
 
 % read Nichol-based synthetic sample. nss stands for NicoleSynSam
 
-disp("importing the nssDarkB10 file: " + path.git.synsam.out.nssDarkB10);
-nss.Dark = importdata(path.git.synsam.out.nssDarkB10);
-disp("importing the nssBrightB10 file: " + path.git.synsam.out.nssBrightB10);
-nss.Bright = importdata(path.git.synsam.out.nssBrightB10);
+zmodel = "H06";
+zmodel = "B10";
+zmodelFieldDark = "nssDark" + zmodel;
+zmodelFieldBright = "nssBright" + zmodel;
+disp("importing the " + zmodelFieldDark + " file: " + path.git.synsam.out.(zmodelFieldDark));
+nss.Dark = importdata(path.git.synsam.out.(zmodelFieldDark));
+disp("importing the " + zmodelFieldBright + " file: " + path.git.synsam.out.(zmodelFieldBright));
+nss.Bright = importdata(path.git.synsam.out.(zmodelFieldBright));
 %nss.SynSam = importdata(path.git.synsam.out.synsam);
 
 % bring everything to log10 scale
