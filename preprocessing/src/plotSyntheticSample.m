@@ -5,11 +5,14 @@ filePath = mfilename('fullpath');
 [scriptPath,fileName,fileExt] = fileparts(filePath); cd(scriptPath);
 
 addpath(genpath('../../../../libmatlab/')) % added by josh
+addpath(genpath('./lloyd2019/')) % added by josh
+addpath(genpath('./chandra2012/')) % added by josh
 
 % read Swift time table
 
 datPath = '../data/';
 Swift = importdata([datPath,'swiftTimeTable.xlsx']);
+%fileExtension = ".pdf";
 
 % plot histogram of log10(T90/Tr45)
 
@@ -28,7 +31,7 @@ disp( [ 'median(T90/Tr45) = ',  num2str(medSwiftT90OverTr45,15) ]);
 
 outPath = '../out/';
 kfacType = 'OneThird';
-ChandraDataPlotRequested = 0;
+ChandraDataPlotRequested = 1;
 if ChandraDataPlotRequested
 
     % read Chandra Data
@@ -42,7 +45,7 @@ if ChandraDataPlotRequested
         radioType = Radio.Type.Name{irtype};
         Radio.(radioType).Zone = exp( ChandraTableOne.(radioType).LogZone );
         Radio.(radioType).Eiso = exp( ChandraTableOne.(radioType).LogEiso );
-        Radio.(radioType).Durz = exp( ChandraTableOne.(radioType).LogDurz );
+        Radio.(radioType).Durz = exp( ChandraTableOne.(radioType).LogT90z );
         Radio.MarkerSize.default = 25;
         Radio.MarkerSize.overlay = 12;
     end
@@ -60,7 +63,7 @@ end
 ZoneRequested = 1;
 bivarPlotsRequested = 1;
 histFigExportRequested = 0;
-bivarFigExportRequested = 0;
+bivarFigExportRequested = 1;
 fontSize = 13;
 myYellow = [1,1,0];
 myGrey = [0 0 0]; % determines the gray color strength, higher means whiter
@@ -159,7 +162,7 @@ VarLim =        [ 5.e46, 1.e55  ... log10Liso
                 ; 1.e0, 3.6e1  ... redshift+1
                 ];
 
-outPathSynSam = [outPath,'SynSam_kfac',kfacType,'/'];
+outPathSynSam =  getFullPath(fullfile(outPath,'SynSam_kfac',kfacType,'/'));%[outPath,'SynSam_kfac',kfacType,'/'];
 if ~exist(['kfac',kfacType],'dir'); mkdir(outPathSynSam); end
 
 nVarPair = length(VarPair);
@@ -303,20 +306,31 @@ for iVarPair = [5,15,16] %1:nVarPair
             % add Lloyd data to Eiso-Durz plot
             if iVarPair==5
                % 'orange' [0.9100 0.4100 0.1700]
-                plot( Radio.Bright.Eiso.Val, Radio.Bright.Durz.Val, '.', 'MarkerSize', Radio.MarkerSize.overlay, 'color', myYellow);
-                plot(   Radio.Dark.Eiso.Val,   Radio.Dark.Durz.Val, '.', 'MarkerSize', Radio.MarkerSize.overlay, 'color', myGrey);
+                plot( Radio.Bright.Eiso, Radio.Bright.Durz, '.', 'MarkerSize', Radio.MarkerSize.overlay, 'color', myYellow);
+                plot(   Radio.Dark.Eiso,   Radio.Dark.Durz, '.', 'MarkerSize', Radio.MarkerSize.overlay, 'color', myGrey);
+                plot( exp(ChandraTableOne.Bright.LogEiso), exp(ChandraTableOne.Bright.LogT90z), '.', 'MarkerSize', Radio.MarkerSize.overlay, 'color', myYellow);
+                plot( exp(ChandraTableOne.Dark.LogEiso) ,   exp(ChandraTableOne.Dark.LogT90z), '.', 'MarkerSize', Radio.MarkerSize.overlay, 'color', myGrey);
+
+                
+                
             end
 
             % add Lloyd data to redshift-Eiso plot
             if iVarPair==15
-                plot( Radio.Bright.Zone.Val, Radio.Bright.Eiso.Val, '.', 'MarkerSize', Radio.MarkerSize.overlay, 'color', myYellow);
-                plot(   Radio.Dark.Zone.Val,   Radio.Dark.Eiso.Val, '.', 'MarkerSize', Radio.MarkerSize.overlay, 'color', myGrey);
+                plot( Radio.Bright.Zone, Radio.Bright.Eiso, '.', 'MarkerSize', Radio.MarkerSize.overlay, 'color', myYellow);
+                plot(   Radio.Dark.Zone,   Radio.Dark.Eiso, '.', 'MarkerSize', Radio.MarkerSize.overlay, 'color', myGrey);
+                plot( exp(ChandraTableOne.Bright.LogZone), exp(ChandraTableOne.Bright.LogEiso), '.', 'MarkerSize', Radio.MarkerSize.overlay, 'color', myYellow);
+                plot(   exp(ChandraTableOne.Dark.LogZone),   exp(ChandraTableOne.Dark.LogEiso), '.', 'MarkerSize', Radio.MarkerSize.overlay, 'color', myGrey);
+
             end
 
             % add Lloyd data to redshift-Durz plot
             if iVarPair==16
-                plot( Radio.Bright.Zone.Val, Radio.Bright.Durz.Val, '.', 'MarkerSize', Radio.MarkerSize.overlay, 'color', myYellow);
-                plot(   Radio.Dark.Zone.Val,   Radio.Dark.Durz.Val, '.', 'MarkerSize', Radio.MarkerSize.overlay, 'color', myGrey);
+                plot( Radio.Bright.Zone, Radio.Bright.Durz, '.', 'MarkerSize', Radio.MarkerSize.overlay, 'color', myYellow);
+                plot(   Radio.Dark.Zone,   Radio.Dark.Durz, '.', 'MarkerSize', Radio.MarkerSize.overlay, 'color', myGrey);
+                plot( exp(ChandraTableOne.Bright.LogZone), exp(ChandraTableOne.Bright.LogT90z), '.', 'MarkerSize', Radio.MarkerSize.overlay, 'color', myYellow);
+                plot(   exp(ChandraTableOne.Dark.LogZone), exp(ChandraTableOne.Dark.LogT90z), '.', 'MarkerSize', Radio.MarkerSize.overlay, 'color', myGrey);
+
             end
 
             set(gca,'xscale','log','fontsize',fontSize);
@@ -347,6 +361,27 @@ for iVarPair = [5,15,16] %1:nVarPair
     end % imodel
 
 end
+
+sprintf("The correlation for Radio Bright Eiso vs Durz is: %0.5f",corr( [Radio.Bright.Eiso; ...
+    exp(ChandraTableOne.Bright.LogEiso)] , [Radio.Bright.Durz;exp(ChandraTableOne.Bright.LogT90z)] ...
+    , 'type' , "spearman" ))
+sprintf("The correlation for Radio Dark Eiso vs Durz is: %0.5f",corr( [Radio.Dark.Eiso; ...
+    exp(ChandraTableOne.Dark.LogEiso)] , [Radio.Dark.Durz;exp(ChandraTableOne.Dark.LogT90z)] ...
+    , 'type' , "spearman" ))
+
+sprintf("The correlation for Radio Bright Eiso vs Z+1 is: %0.5f",corr( [Radio.Bright.Eiso; ...
+    exp(ChandraTableOne.Bright.LogEiso)] , [Radio.Bright.Zone;exp(ChandraTableOne.Bright.LogZone)] ...
+    , 'type' , "spearman" ))
+sprintf("The correlation for Radio Dark Eiso vs Z+1 is: %0.5f",corr( [Radio.Dark.Eiso; ...
+    exp(ChandraTableOne.Dark.LogEiso)] , [Radio.Dark.Zone;exp(ChandraTableOne.Dark.LogZone)] ...
+    , 'type' , "spearman" ))
+
+sprintf("The correlation for Radio Bright Z+1 vs Durz is: %0.5f",corr( [Radio.Bright.Zone; ...
+    exp(ChandraTableOne.Bright.LogZone)] , [Radio.Bright.Durz;exp(ChandraTableOne.Bright.LogT90z)] ...
+    , 'type' , "spearman" ))
+sprintf("The correlation for Radio Dark Z+1 vs Durz is: %0.5f",corr( [Radio.Dark.Zone; ...
+    exp(ChandraTableOne.Dark.LogZone)] , [Radio.Dark.Durz;exp(ChandraTableOne.Dark.LogT90z)] ...
+    , 'type' , "spearman" ))
 
 
 % find the moving average of Durz vs. Eiso for the detectable sample
