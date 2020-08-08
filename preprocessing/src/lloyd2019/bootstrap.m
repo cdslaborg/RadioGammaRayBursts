@@ -5,11 +5,13 @@
 format compact; format long;
 filePath = mfilename('fullpath');
 [scriptPath,fileName,fileExt] = fileparts(filePath); cd(scriptPath);
-addpath(genpath('../../../../../lib/matlab/')) % lib codes
+addpath(genpath('../../../../../libmatlab/')) % lib codes
 
-bootstrapRequested = 0;
-varFigExportRequested = 0;
-corFigExportRequested = 0;
+figFileExt = '.pdf';
+figColor = "white";
+bootstrapRequested = 0; % uncomment ONLY if you want new fresh bootstrapping
+varFigExportRequested = 1;
+corFigExportRequested = 1;
 fontSize = 13;
 kfacType = 'OneThird';
 
@@ -17,9 +19,8 @@ kfacType = 'OneThird';
 
 Radio = readLloydRadioData(kfacType);
 
-Boot.outPath = '../../out/lloyd2019/';
-Boot.datPath = '../../data/lloyd2019/';
-Boot.filename = 'CorBootstrap.mat';
+outPath = '../../out/lloyd2019/';
+bootFileName = 'CorBootstrap.mat';
 
 % perform bootstrapping
 
@@ -92,13 +93,15 @@ else
 
     %if ~exist('Boot','var')
         disp('loading bootstrap Mat file, containing Structure ''Boot'' ...');
-        load([Boot.outPath,Boot.filename])
+        load([outPath,bootFileName])
     %else
     %    warning('Variable ''Boot'' already exists in MATLAB environment. Skipping Boot load from Hard Drive...');
     %end
 
 end
 
+Boot.outPath = outPath;
+Boot.datPath = '../../data/lloyd2019/';
 
 % plot histograms and plots
 Boot.Var.Label = {'(z+1)','E_{iso} [ ergs ]','T_{90z} [ s ]'};
@@ -148,6 +151,7 @@ for icorType = 1:1%1:Boot.Cor.Type.count
         ivarName = Boot.Var.Name{ivar};
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%%% avg std histograms
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
         StatName = {'Avg','Std'};
@@ -157,12 +161,13 @@ for icorType = 1:1%1:Boot.Cor.Type.count
 
             iStatName = StatName{iStat};
 
-            if varFigExportRequested, close all, figure('visible','off','Color','none'), else, figure, end
+            if varFigExportRequested, close all, figure('visible','off','Color',figColor), else, figure, end
                 hold on; box on; %colormap('cool');
                 LegendName = cell(Radio.Type.count,1);
                 for irtype = 1:Radio.Type.count
                     radioType = Radio.Type.Name{irtype};
-                    LegendName{irtype} = ['Radio-',radioType];
+                    radioTypeLegend = 'Quiet'; if strcmpi(radioType,'bright'); radioTypeLegend = 'Loud'; end
+                    LegendName{irtype} = ['Radio-',radioTypeLegend];
                     
                     
                     
@@ -184,22 +189,23 @@ for icorType = 1:1%1:Boot.Cor.Type.count
                     legend  ( LegendName ...
                             , 'location' , Boot.Var.(ivarName).Hist.(iStatName).legendLoc ...
                             , 'fontSize' , fontSize ...
-                            , 'color' , 'none' ...
+                            , 'color' , figColor ...
                             )
 
                 legend boxoff;
     
                 % Compute the odds of Radio-Bright correlations being higher than Radio-Dark correlations
+
                 prob = sum  ( Boot.Var.(ivarName).Bright.Hist.Height.Values ...
                             .*Boot.Var.(ivarName).Dark.Hist.Height.CumSum );
                 text( Boot.Var.(ivarName).Hist.(iStatName).textLoc(1) ...
                     , Boot.Var.(ivarName).Hist.(iStatName).textLoc(2) ...
-                    , ['\pi ( {Bright} \geq {Dark} ) = ',sprintf('%.2f',round(prob,2))] ...
+                    , ['\pi ( {Loud} \geq {Quiet} ) = ',sprintf('%.2f',round(prob,2))] ...
                     , 'Units', 'normalized', 'HorizontalAlignment', Boot.Var.(ivarName).Hist.(iStatName).textAlign ...
                     , 'Interpreter', 'tex', 'fontSize' , fontSize );
                 text( Boot.Var.(ivarName).Hist.(iStatName).textLoc(1) ...
                     , Boot.Var.(ivarName).Hist.(iStatName).textLoc(2) - 0.1 ...
-                    , [ '{Bright} = ' ...
+                    , [ '{Loud} = ' ...
                     , sprintf('%.2f',round(Boot.Var.(ivarName).Bright.avg,2)) ...
                     , ' \pm ' ...
                     , sprintf('%.2f',round(Boot.Var.(ivarName).Bright.std,2)) ...
@@ -208,7 +214,7 @@ for icorType = 1:1%1:Boot.Cor.Type.count
                     , 'Interpreter', 'tex', 'fontSize' , fontSize );
                 text( Boot.Var.(ivarName).Hist.(iStatName).textLoc(1) ...
                     , Boot.Var.(ivarName).Hist.(iStatName).textLoc(2) - 0.2 ...
-                    , [ '{Dark} = ' ...
+                    , [ '{Quiet} = ' ...
                     , sprintf('%.2f',round(Boot.Var.(ivarName).Dark.avg,2)) ...
                     , ' \pm ' ...
                     , sprintf('%.2f',round(Boot.Var.(ivarName).Dark.std,2)) ...
@@ -216,9 +222,9 @@ for icorType = 1:1%1:Boot.Cor.Type.count
                     , 'Units', 'normalized', 'HorizontalAlignment', Boot.Var.(ivarName).Hist.(iStatName).textAlign ...
                     , 'Interpreter', 'tex', 'fontSize' , fontSize );
     
-            set(gca, 'color', 'none', 'fontsize', fontSize);
+            set(gca, 'color', figColor, 'fontsize', fontSize);
             if varFigExportRequested
-                fileName = [Boot.outPath,'BootHist_',iStatName,'Log10',ivarName(4:end),'.png'];
+                fileName = [Boot.outPath,'BootHist',iStatName,'Log10',ivarName(4:end),figFileExt];
                 disp(['Generating Figure ',fileName]);
                 export_fig(fileName,'-m4 -transparent');
                 hold off; close(gcf);
@@ -229,6 +235,7 @@ for icorType = 1:1%1:Boot.Cor.Type.count
         end % istat
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%%% Correlation strength histograms
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
         for jvar = ivar+1:Boot.Var.count
@@ -237,12 +244,14 @@ for icorType = 1:1%1:Boot.Cor.Type.count
             corName = [ivarName(4:end),jvarName(4:end)];
 
             % Correlation strength histograms
-            if corFigExportRequested, close all, figure('visible','off','Color','none'), else, figure, end
+
+            if corFigExportRequested, close all, figure('visible','off','Color',figColor), else, figure, end
                 hold on; box on; %colormap('cool');
                 LegendName = cell(Radio.Type.count,1);
                 for irtype = 1:Radio.Type.count
                     radioType = Radio.Type.Name{irtype};
-                    LegendName{irtype} = ['Radio-',radioType];
+                    radioTypeLegend = 'Quiet'; if strcmpi(radioType,'bright'); radioTypeLegend = 'Loud'; end
+                    LegendName{irtype} = ['Radio-',radioTypeLegend];
                     h = histogram(Boot.Cor.(corType).(corName).(radioType).Sval,'normalization','probability');
                     h.BinWidth = 0.02;
                     h.BinLimits = [-1.,1.];
@@ -260,21 +269,22 @@ for icorType = 1:1%1:Boot.Cor.Type.count
                 legend  ( LegendName ...
                         , 'location' , Boot.Cor.(corType).(corName).Hist.legendLoc ...
                         , 'fontSize' , fontSize ...
-                        , 'color' , 'none' ...
+                        , 'color' , figColor ...
                         )
                 legend boxoff;
 
                 % Compute the odds of Radio-Bright correlations being higher than Radio-Dark correlations
+
                 prob = sum  ( Boot.Cor.(corType).(corName).Bright.Hist.Height.Values ...
                             .*Boot.Cor.(corType).(corName).Dark.Hist.Height.CumSum );
                 text( Boot.Cor.(corType).(corName).Hist.textLoc(1) ...
                     , Boot.Cor.(corType).(corName).Hist.textLoc(2) ...
-                    , ['\pi ( \rho_{Bright} \geq \rho_{Dark} ) = ',sprintf('%.2f',round(prob,2))] ...
+                    , ['\pi ( \rho_{Loud} \geq \rho_{Quiet} ) = ',sprintf('%.2f',round(prob,2))] ...
                     , 'Units', 'normalized', 'HorizontalAlignment', Boot.Cor.(corType).(corName).Hist.textAlign ...
                     , 'Interpreter', 'tex', 'fontSize' , fontSize );
                 text( Boot.Cor.(corType).(corName).Hist.textLoc(1) ...
                     , Boot.Cor.(corType).(corName).Hist.textLoc(2) - 0.1 ...
-                    , [ '\rho_{Bright} = ' ...
+                    , [ '\rho_{Loud} = ' ...
                       , sprintf('%.2f',round(Boot.Cor.(corType).(corName).Bright.avg,2)) ...
                       , ' \pm ' ...
                       , sprintf('%.2f',round(Boot.Cor.(corType).(corName).Bright.std,2)) ...
@@ -283,7 +293,7 @@ for icorType = 1:1%1:Boot.Cor.Type.count
                     , 'Interpreter', 'tex', 'fontSize' , fontSize );
                 text( Boot.Cor.(corType).(corName).Hist.textLoc(1) ...
                     , Boot.Cor.(corType).(corName).Hist.textLoc(2) - 0.2 ...
-                    , [ '\rho_{Dark} = ' ...
+                    , [ '\rho_{Quiet} = ' ...
                       , sprintf('%.2f',round(Boot.Cor.(corType).(corName).Dark.avg,2)) ...
                       , ' \pm ' ...
                       , sprintf('%.2f',round(Boot.Cor.(corType).(corName).Dark.std,2)) ...
@@ -291,9 +301,9 @@ for icorType = 1:1%1:Boot.Cor.Type.count
                     , 'Units', 'normalized', 'HorizontalAlignment', Boot.Cor.(corType).(corName).Hist.textAlign ...
                     , 'Interpreter', 'tex', 'fontSize' , fontSize );
 
-            set(gca, 'color', 'none', 'fontsize', fontSize);
+            set(gca, 'color', figColor, 'fontsize', fontSize);
             if corFigExportRequested
-                fileName = [Boot.outPath,'BootHistCor_',ivarName(4:end),jvarName(4:end),'.png'];
+                fileName = [Boot.outPath,'BootHistCorr',ivarName(4:end),jvarName(4:end),figFileExt];
                 disp(['Generating Figure ',fileName]);
                 export_fig(fileName,'-m4 -transparent');
                 hold off; close(gcf);

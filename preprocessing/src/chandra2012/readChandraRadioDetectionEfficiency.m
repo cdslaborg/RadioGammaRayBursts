@@ -20,7 +20,7 @@ else
 end
  
 
-figFileExt = '.pdf';
+figFileExt = '.png';
 dataPath = '../../data/chandra2012/';
 outPath = '../../out/chandra2012/';
 load([dataPath,'ChandraRadioDetectionEfficiency.mat']);
@@ -94,8 +94,11 @@ if figExportRequested, figure('visible','off','Color',backColor), else, figure, 
 
 if figExportRequested
     fileName = [outPath,'ChandraRadioDetectionEfficiency',figFileExt];
-    %export_fig (fileName,'-dpdf -m2');
-    export_fig (fileName,'-m4 -transparent');
+    %if contains(figFileExt,"pdf")
+    %    print(gcf, '-dpdf', fileName); 
+    %else
+        export_fig (fileName,'-m4 -transparent');
+    %end
     %print(gcf, '-dpdf', fileName);
     hold off; close(gcf);
 else
